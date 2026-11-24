@@ -1,4 +1,5 @@
 import { LEVELS, LEVEL_NAMES, LEVEL_BIOMES } from "../data/levels/index.js";
+import { countTiles as countLevelTiles, validateLevelRows } from "../core/level-format.js";
 import { sanitizeSettingsOverrides } from "../core/settings.js";
 import {
   normalizeLevelRows,
@@ -120,6 +121,8 @@ const importInput = document.getElementById("importInput");
 let grid = [];
 let levelId = null;
 let levelBiome = "grass";
+let levelAuthor = "";
+let levelNote = "";
 let currentTool = "paint";
 let selectedTile = "G";
 
@@ -212,6 +215,8 @@ function scheduleDraftSave() {
       name: levelNameInput.value,
       rows: rowsToStrings(grid),
       biome: levelBiome,
+      author: levelAuthor,
+      note: levelNote,
       levelId: levelId
     });
   }, 500);
@@ -459,7 +464,9 @@ function applyTemplate() {
     template.label,
     null,
     true,
-    template.biome || "grass"
+    template.biome || "grass",
+    "",
+    ""
   );
 
   loadSelect.value = "";
@@ -1232,28 +1239,6 @@ window.addEventListener("resize", drawMiniMap);
 // ПРОВЕРКА УРОВНЯ
 // ============================================
 
-function countTiles() {
-  const counts = {};
-
-  for (const char of PALETTE_ORDER) {
-    counts[char] = 0;
-  }
-
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-      const char = grid[y][x];
-
-      if (counts[char] === undefined) {
-        counts[char] = 0;
-      }
-
-      counts[char] += 1;
-    }
-  }
-
-  return counts;
-}
-
 function findTile(char) {
   for (let y = 0; y < grid.length; y++) {
     for (let x = 0; x < grid[y].length; x++) {
@@ -1266,108 +1251,22 @@ function findTile(char) {
   return null;
 }
 
+function gridRows() {
+  return rowsToStrings(grid);
+}
+
 function validateLevel() {
-  const errors = [];
-  const warnings = [];
-  const counts = countTiles();
-  const allowed = new Set(PALETTE_ORDER);
-  const unknown = new Set();
-
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-      if (!allowed.has(grid[y][x])) {
-        unknown.add(grid[y][x]);
-      }
-    }
-  }
-
-  if (unknown.size > 0) {
-    errors.push("неизвестные символы: " + Array.from(unknown).join(" "));
-  }
-
-  const starts = counts.P || 0;
-  const finishes = counts.X || 0;
-
-  if (starts === 0) {
-    errors.push("поставь старт P");
-  }
-
-  if (starts > 1) {
-    errors.push("старт P должен быть один");
-  }
-
-  if (finishes === 0) {
-    errors.push("поставь финиш X");
-  }
-
-  if (finishes > 1) {
-    warnings.push("финишей несколько, лучше оставить один");
-  }
-
-  if ((counts.G || 0) === 0) {
-    warnings.push("на карте нет земли G");
-  }
-
-  if (starts === 1) {
-    const start = findTile("P");
-    const below = grid[start.y + 1] ? grid[start.y + 1][start.x] : null;
-
-    if (below !== "G" && below !== "D") {
-      warnings.push("под стартом P нет земли — игрок сразу упадёт");
-    }
-  }
-
-  if ((counts.D || 0) > 0 && (counts.K || 0) === 0) {
-    warnings.push("есть дверь D, но нет ключа K");
-  }
-
-  if ((counts.D || 0) > 0) {
-    const doorCell = findTile("D");
-    const aboveDoor = grid[doorCell.y - 2]
-      ? grid[doorCell.y - 2][doorCell.x]
-      : null;
-
-    // Дверь занимает две клетки. Если над ней нет земли,
-    // игрок сможет перепрыгнуть дверь без ключа.
-    if (aboveDoor !== "G") {
-      warnings.push("над дверью D нет земли — её можно перепрыгнуть");
-    }
-  }
-
-  const bosses = counts.Z || 0;
-
-  if (bosses > 1) {
-    errors.push("босс Z должен быть один");
-  }
-
-  if (bosses === 1) {
-    const bossCell = findTile("Z");
-    const below = grid[bossCell.y + 1]
-      ? grid[bossCell.y + 1][bossCell.x]
-      : null;
-
-    if (below !== "G") {
-      warnings.push("под боссом Z нет земли — он может упасть");
-    }
-
-    const above = grid[bossCell.y - 1]
-      ? grid[bossCell.y - 1][bossCell.x]
-      : null;
-
-    if (above === "G") {
-      warnings.push("над боссом Z мало места — поставь его ниже");
-    }
-  }
+  const result = validateLevelRows(gridRows());
 
   return {
-    errors: errors,
-    warnings: warnings,
-    counts: counts
+    errors: result.errors,
+    warnings: result.warnings,
+    counts: countLevelTiles(gridRows())
   };
 }
 
 function updateStats() {
-  const counts = countTiles();
+  const counts = countLevelTiles(gridRows());
   const width = grid[0] ? grid[0].length : 0;
 
   statsElement.textContent =
@@ -1401,7 +1300,7 @@ function updateValidation() {
 // ЗАГРУЗКА, СОХРАНЕНИЕ, ТЕСТ
 // ============================================
 
-function applyGrid(rows, name, id, markDirty, biome) {
+function applyGrid(rows, name, id, markDirty, biome, author, note) {
   const cleanRows = normalizeLevelRows(rows);
 
   if (!cleanRows) {
@@ -1415,6 +1314,8 @@ function applyGrid(rows, name, id, markDirty, biome) {
   levelBiome = biome === "snow" || biome === "castle"
     ? biome
     : "grass";
+  levelAuthor = typeof author === "string" ? author : "";
+  levelNote = typeof note === "string" ? note : "";
   biomeSelect.value = levelBiome;
   importedSettings = null;
   levelNameInput.value = name || "Мой уровень";
@@ -1454,7 +1355,7 @@ function resetToNewLevel(askFirst, quiet) {
   levelId = null;
   clearEditorDraft();
 
-  applyGrid(rowsToStrings(template), "Мой уровень", null, false, "grass");
+  applyGrid(rowsToStrings(template), "Мой уровень", null, false, "grass", "", "");
 
   loadSelect.value = "";
   updateUndoButtons();
@@ -1546,7 +1447,9 @@ function loadSelectedLevel() {
       name,
       null,
       true,
-      LEVEL_BIOMES[index] || "grass"
+      LEVEL_BIOMES[index] || "grass",
+      "",
+      ""
     );
     showToast("Готовый уровень загружен. «Сохранить» создаст твою копию.");
     return;
@@ -1575,7 +1478,9 @@ function loadSelectedLevel() {
       level.name,
       level.id,
       false,
-      level.biome || "grass"
+      level.biome || "grass",
+      level.author,
+      level.note
     );
     showToast(`Загружен уровень «${level.name}».`);
   }
@@ -1597,7 +1502,9 @@ function saveCurrentLevel() {
     id: levelId,
     name: name,
     rows: rows,
-    biome: levelBiome
+    biome: levelBiome,
+    author: levelAuthor,
+    note: levelNote
   });
 
   if (!saved) {
@@ -1646,7 +1553,7 @@ function testCurrentLevel() {
   const name = levelNameInput.value.trim() || "Проверка уровня";
   const rows = rowsToStrings(grid);
 
-  if (!saveTestLevel({ name: name, rows: rows, biome: levelBiome })) {
+  if (!saveTestLevel({ name: name, rows: rows, biome: levelBiome, author: levelAuthor, note: levelNote })) {
     showToast("Не удалось подготовить уровень к проверке.", "error");
     return;
   }
@@ -1684,7 +1591,9 @@ function undo() {
     levelNameInput.value,
     levelId,
     true,
-    levelBiome
+    levelBiome,
+    levelAuthor,
+    levelNote
   );
   showToast("Действие отменено");
 }
@@ -1703,7 +1612,9 @@ function redo() {
     levelNameInput.value,
     levelId,
     true,
-    levelBiome
+    levelBiome,
+    levelAuthor,
+    levelNote
   );
   showToast("Действие возвращено");
 }
@@ -1824,6 +1735,8 @@ function exportCurrentLevel() {
     version: 1,
     name: name,
     biome: levelBiome,
+    author: levelAuthor,
+    note: levelNote,
     rows: rowsToStrings(grid),
     updatedAt: Date.now()
   };
@@ -1892,7 +1805,9 @@ function importFromFile(file) {
       clean.name,
       null,
       true,
-      clean.biome || "grass"
+      clean.biome || "grass",
+      clean.author,
+      clean.note
     );
     importedSettings = sanitizeSettingsOverrides(candidate.settings);
     loadSelect.value = "";
@@ -2087,7 +2002,9 @@ if (restoredDraft) {
     restoredDraft.name,
     restoredDraft.levelId,
     true,
-    restoredDraft.biome || "grass"
+    restoredDraft.biome || "grass",
+    restoredDraft.author,
+    restoredDraft.note
   );
   loadSelect.value = "";
   showToast(

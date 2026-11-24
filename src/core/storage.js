@@ -1,9 +1,18 @@
+import {
+  LEVEL_BIOMES,
+  LEVEL_LIMITS,
+  normalizeLevelRows,
+  parseLevel
+} from "./level-format.js";
 import { sanitizeSettingsOverrides } from "./settings.js";
+
 // ============================================
 // ХРАНИЛИЩЕ ДАННЫХ
 // ============================================
 // Свои уровни и настройки хранятся в localStorage браузера.
 // Обёртки ниже не дают игре упасть, если хранилище недоступно.
+
+export { normalizeLevelRows };
 
 export const STORAGE_KEYS = {
   customLevels: "platformer.customLevels.v1",
@@ -14,9 +23,9 @@ export const STORAGE_KEYS = {
   editorDraft: "platformer.editorDraft.v1"
 };
 
-export const MAX_LEVEL_WIDTH = 120;
-export const MAX_LEVEL_HEIGHT = 40;
-export const CUSTOM_LEVEL_BIOMES = ["grass", "snow", "castle"];
+export const MAX_LEVEL_WIDTH = LEVEL_LIMITS.maxWidth;
+export const MAX_LEVEL_HEIGHT = LEVEL_LIMITS.maxHeight;
+export const CUSTOM_LEVEL_BIOMES = LEVEL_BIOMES;
 
 export function readStorage(key, fallback) {
   try {
@@ -48,57 +57,23 @@ function makeLevelId() {
 }
 
 // Приводим карту к прямоугольнику: строки одинаковой длины, только строки.
-export function normalizeLevelRows(rows) {
-  if (!Array.isArray(rows) || rows.length < 4) {
-    return null;
-  }
-
-  if (rows.length > MAX_LEVEL_HEIGHT) {
-    return null;
-  }
-
-  const cleanRows = rows.map(row => {
-    if (typeof row !== "string") {
-      return null;
-    }
-
-    return row;
-  });
-
-  if (cleanRows.some(row => row === null)) {
-    return null;
-  }
-
-  const width = Math.max(...cleanRows.map(row => row.length));
-
-  if (width < 8 || width > MAX_LEVEL_WIDTH) {
-    return null;
-  }
-
-  return cleanRows.map(row => (row + ".".repeat(width)).slice(0, width));
-}
+// Сама нормализация живёт в level-format.js.
 
 export function sanitizeLevel(level) {
-  if (!level || typeof level !== "object") {
-    return null;
-  }
+  const { level: clean } = parseLevel(level);
 
-  const rows = normalizeLevelRows(level.rows);
-
-  if (!rows) {
+  if (!clean) {
     return null;
   }
 
   return {
     id: typeof level.id === "string" && level.id ? level.id : makeLevelId(),
-    name: typeof level.name === "string" && level.name.trim()
-      ? level.name.trim().slice(0, 40)
-      : "Мой уровень",
-    rows: rows,
-    biome: CUSTOM_LEVEL_BIOMES.includes(level.biome)
-      ? level.biome
-      : "grass",
-    updatedAt: Number(level.updatedAt) || Date.now()
+    name: clean.name,
+    rows: clean.rows,
+    biome: clean.biome,
+    author: clean.author,
+    note: clean.note,
+    updatedAt: clean.updatedAt
   };
 }
 
@@ -252,8 +227,14 @@ export function saveEditorDraft(draft) {
 
   return writeStorage(STORAGE_KEYS.editorDraft, {
     name: typeof draft.name === "string" && draft.name.trim()
-      ? draft.name.trim().slice(0, 40)
+      ? draft.name.trim().slice(0, LEVEL_LIMITS.maxName)
       : "Черновик",
+    author: typeof draft.author === "string"
+      ? draft.author.trim().slice(0, LEVEL_LIMITS.maxAuthor)
+      : "",
+    note: typeof draft.note === "string"
+      ? draft.note.trim().slice(0, LEVEL_LIMITS.maxNote)
+      : "",
     rows: rows,
     biome: CUSTOM_LEVEL_BIOMES.includes(draft.biome)
       ? draft.biome
@@ -278,8 +259,14 @@ export function getEditorDraft() {
 
   return {
     name: typeof raw.name === "string" && raw.name.trim()
-      ? raw.name.trim().slice(0, 40)
+      ? raw.name.trim().slice(0, LEVEL_LIMITS.maxName)
       : "Черновик",
+    author: typeof raw.author === "string"
+      ? raw.author.trim().slice(0, LEVEL_LIMITS.maxAuthor)
+      : "",
+    note: typeof raw.note === "string"
+      ? raw.note.trim().slice(0, LEVEL_LIMITS.maxNote)
+      : "",
     rows: rows,
     biome: CUSTOM_LEVEL_BIOMES.includes(raw.biome)
       ? raw.biome

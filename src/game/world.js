@@ -2,6 +2,7 @@ import { LEVELS, LEVEL_NAMES, LEVEL_BIOMES, LEVEL_BOSS_TYPES } from "../data/lev
 import { TILE, SETTINGS, applySettingsOverrides } from "../core/settings.js";
 import { state } from "../core/state.js";
 import { getLevelSettings } from "../core/storage.js";
+import { TILE_CHARS, validateLevelRows } from "../core/level-format.js";
 import { playSound } from "../core/sound.js";
 import { resetEffects } from "../core/effects.js";
 import { intersects, clamp } from "./collision.js";
@@ -27,29 +28,7 @@ export const BUILTIN_LEVELS = LEVELS.map((rows, index) => ({
 state.gameLevels = BUILTIN_LEVELS;
 state.currentLevelName = LEVEL_NAMES[0];
 
-// Какие символы можно использовать в карте уровня
-const TILE_CHARS = new Set([
-  "G", // земля
-  "P", // старт игрока
-  "C", // монета
-  "E", // обычный враг
-  "T", // стреляющий враг
-  "S", // шипы
-  "F", // чекпоинт
-  "M", // движущаяся платформа (по горизонтали)
-  "V", // движущаяся платформа (по вертикали)
-  "K", // ключ
-  "D", // дверь
-  "B", // батут
-  "L", // падающая платформа
-  "O", // платформа в одну сторону
-  "R", // разрушаемый блок
-  "H", // лестница
-  "W", // пила
-  "N", // пушка
-  "Z", // босс
-  "X"  // финишный флаг
-]);
+// TILE_CHARS живёт в модуле формата уровня.
 
 
 
@@ -318,6 +297,14 @@ export function loadLevel(index) {
   state.currentBossType = level.bossType || "default";
 
   const rows = level.rows;
+
+  // Игра грузит карту даже с ошибками, но пишет их в консоль:
+  // так видно, что не так в уровне, не блокируя запуск.
+  const check = validateLevelRows(rows);
+
+  for (const problem of check.errors) {
+    console.warn(`Уровень ${index + 1}: ${problem}`);
+  }
 
   state.currentLevelName = level.name;
 

@@ -63,14 +63,16 @@ describe("sanitizeLevel", () => {
       rows: GOOD_ROWS,
       biome: "snow",
       author: "Влад",
-      note: "секрет"
+      note: "секрет",
+      history: "мусор"
     });
 
     expect(level.name).toBe(name.slice(0, 40));
     expect(level.rows).toEqual(GOOD_ROWS);
     expect(level.biome).toBe("snow");
-    expect(level).not.toHaveProperty("author");
-    expect(level).not.toHaveProperty("note");
+    expect(level.author).toBe("Влад");
+    expect(level.note).toBe("секрет");
+    expect(level).not.toHaveProperty("history");
   });
 
   it("подставляет обычное имя и биом", () => {
@@ -90,6 +92,24 @@ describe("sanitizeLevel", () => {
     const level = sanitizeLevel({ id: "lvl_1_abc", rows: GOOD_ROWS });
 
     expect(level.id).toBe("lvl_1_abc");
+  });
+
+  it("сохраняет автора и описание", () => {
+    const level = sanitizeLevel({
+      rows: GOOD_ROWS,
+      author: "Влад",
+      note: "три прыжка и батут"
+    });
+
+    expect(level.author).toBe("Влад");
+    expect(level.note).toBe("три прыжка и батут");
+  });
+
+  it("подставляет пустые строки старым уровням без автора", () => {
+    const level = sanitizeLevel({ rows: GOOD_ROWS });
+
+    expect(level.author).toBe("");
+    expect(level.note).toBe("");
   });
 
   it("возвращает null для карты неверного формата", () => {
