@@ -6,7 +6,7 @@
 // физики, а граф опорных клеток, поэтому результат — предупреждение,
 // а не приговор: карту всё равно нужно проверять в игре.
 
-import { hasSupportBelow, isSolidAt, tileAt } from "./level-tiles.js";
+import { hasSupportBelow, tileAt } from "./level-tiles.js";
 
 // Насколько высоко и далеко можно прыгнуть (в клетках).
 // Двойной прыжок поднимает примерно на пять клеток.
@@ -31,6 +31,17 @@ export function isFinishReachable(rawRows) {
 
   const hasKey = rows.some(row => String(row).includes("K"));
   const doorBlocks = !hasKey;
+
+  // R ломается головой, поэтому путь через него возможен
+  const blocks = (x, y) => {
+    const char = tileAt(rows, x, y);
+
+    if (char === "G") {
+      return true;
+    }
+
+    return char === "D" && doorBlocks;
+  };
   const isLadder = (x, y) => tileAt(rows, x, y) === "H";
   const cellKey = (x, y) => `${x},${y}`;
 
@@ -46,7 +57,7 @@ export function isFinishReachable(rawRows) {
         finishes.push({ x: x, y: y });
       }
 
-      if (isSolidAt(rows, x, y, doorBlocks)) {
+      if (blocks(x, y)) {
         continue;
       }
 
@@ -69,7 +80,8 @@ export function isFinishReachable(rawRows) {
         x: x,
         y: y,
         ladder: isLadder(x, y),
-        spring: char === "B"
+        spring: char === "B",
+        moving: char === "M" || char === "V"
       };
 
       nodes.set(cellKey(x, y), node);
@@ -104,18 +116,23 @@ export function isFinishReachable(rawRows) {
     }
 
     for (let dx = -SPRING_DISTANCE; dx <= SPRING_DISTANCE; dx++) {
-      for (let dy = -SPRING_RISE; dy <= MAX_DISTANCE + 1; dy++) {
+      for (let dy = -SPRING_RISE; dy < height; dy++) {
         if (dx === 0 && dy === 0) {
           continue;
         }
 
         const next = nodes.get(cellKey(node.x + dx, node.y + dy));
 
-        if (
-          !next ||
-          !canMove(node, next, dx, dy) ||
-          !pathClear(rows, node, next, doorBlocks)
-        ) {
+        if (!next || !canMove(node, next, dx, dy)) {
+          continue;
+        }
+
+        // Лестница и движущаяся платформа сами переносят игрока,
+        // поэтому коридор для них не проверяем.
+        const carried =
+          node.ladder || next.ladder || node.moving || next.moving;
+
+        if (!carried && !pathClear(rows, node, next, blocks)) {
           continue;
         }
 
@@ -143,6 +160,11 @@ function canMove(from, to, dx, dy) {
     return distance <= LADDER_RADIUS && Math.abs(dy) <= LADDER_RADIUS;
   }
 
+  // Движущаяся платформа сама подвозит игрока в пределах хода
+  if (from.moving || to.moving) {
+    return distance <= 3 && Math.abs(dy) <= 3;
+  }
+
   // Вверх: прыжок или батут
   if (dy < 0) {
     const rise = -dy;
@@ -161,20 +183,20 @@ function canMove(from, to, dx, dy) {
 // Проверяем, что путь не проходит сквозь землю и блоки.
 // Прыжок вверх моделируем как «сначала вверх по своей колонке,
 // потом по горизонтали на высоте цели»; падение — наоборот.
-function pathClear(rows, from, to, doorBlocks) {
+function pathClear(rows, from, to, blocks) {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const sx = Math.sign(dx);
 
   if (dy < 0) {
     for (let y = from.y - 1; y >= to.y; y--) {
-      if (isSolidAt(rows, from.x, y, doorBlocks)) {
+      if (blocks(from.x, y)) {
         return false;
       }
     }
 
     for (let x = from.x + sx; x !== to.x + sx; x += sx) {
-      if (isSolidAt(rows, x, to.y, doorBlocks)) {
+      if (blocks(x, to.y)) {
         return false;
       }
     }
@@ -184,13 +206,13 @@ function pathClear(rows, from, to, doorBlocks) {
 
   if (dy > 0) {
     for (let x = from.x + sx; x !== to.x + sx; x += sx) {
-      if (isSolidAt(rows, x, from.y, doorBlocks)) {
+      if (blocks(x, from.y)) {
         return false;
       }
     }
 
     for (let y = from.y + 1; y <= to.y; y++) {
-      if (isSolidAt(rows, to.x, y, doorBlocks)) {
+      if (blocks(to.x, y)) {
         return false;
       }
     }
@@ -199,7 +221,7 @@ function pathClear(rows, from, to, doorBlocks) {
   }
 
   for (let x = from.x + sx; x !== to.x + sx; x += sx) {
-    if (isSolidAt(rows, x, to.y, doorBlocks)) {
+    if (blocks(x, to.y)) {
       return false;
     }
   }

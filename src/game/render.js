@@ -780,6 +780,7 @@ function drawMenuScreen() {
   }
 
   drawUiButtons();
+  drawSelectedLevelInfo();
 
   drawCenteredText(
     state.uiHint,
@@ -789,6 +790,51 @@ function drawMenuScreen() {
     "rgba(255, 255, 255, 0.85)",
     canvas.width - 60
   );
+}
+
+// Автор и строка «чем интересен» для выбранного уровня.
+// Показываем только на экранах со списком уровней.
+function drawSelectedLevelInfo() {
+  if (state.gameState !== "levels" && state.gameState !== "custom") {
+    return;
+  }
+
+  const button = state.uiButtons[state.uiIndex];
+
+  if (!button) {
+    return;
+  }
+
+  const author = button.author ? `Автор: ${button.author}` : "";
+  const note = button.note || "";
+
+  if (!author && !note) {
+    return;
+  }
+
+  const y = 462;
+
+  if (author) {
+    drawCenteredText(
+      author,
+      canvas.width / 2,
+      y,
+      "bold 16px Arial",
+      "#ffe28a",
+      canvas.width - 80
+    );
+  }
+
+  if (note) {
+    drawCenteredText(
+      note,
+      canvas.width / 2,
+      y + 24,
+      "15px Arial",
+      "rgba(255, 255, 255, 0.9)",
+      canvas.width - 80
+    );
+  }
 }
 
 // ============================================
@@ -1076,12 +1122,30 @@ function drawOverlays() {
       "#ffd23d"
     );
 
+    const credit = [
+      state.currentLevelAuthor ? `Автор: ${state.currentLevelAuthor}` : "",
+      state.currentLevelNote
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    if (credit) {
+      drawCenteredText(
+        credit,
+        canvas.width / 2,
+        322,
+        "17px Arial",
+        "#e8f4ff",
+        canvas.width - 80
+      );
+    }
+
     if (result && result.saved && result.bestTimeFrames !== null) {
       if (result.newBestTime) {
         drawCenteredText(
           "Новый рекорд времени!",
           canvas.width / 2,
-          326,
+          352,
           "18px Arial",
           "#8ff0b0"
         );
@@ -1090,7 +1154,7 @@ function drawOverlays() {
       drawCenteredText(
         `Лучшее: ${formatTimeFrames(result.bestTimeFrames)} · жизни: ${result.bestLives}`,
         canvas.width / 2,
-        result.newBestTime ? 352 : 330,
+        result.newBestTime ? 376 : 354,
         "18px Arial",
         "#e8f4ff"
       );
@@ -1104,7 +1168,7 @@ function drawOverlays() {
     drawCenteredText(
       nextText,
       canvas.width / 2,
-      392,
+      408,
       "22px Arial",
       "#ffe28a"
     );
