@@ -5,6 +5,7 @@ import {
   LEVEL_BIOMES,
   LEVEL_BOSS_TYPES
 } from "../src/data/levels/index.js";
+import { validateLevelRows } from "../src/core/level-format.js";
 
 // Полный набор символов совпадает с TILE_CHARS в js/world.js
 const ALLOWED = new Set("GPXCETSFMVKDBLORHWNZ".split(""));
@@ -53,6 +54,15 @@ describe("реестр готовых уровней", () => {
         const known = char === "." || ALLOWED.has(char);
         expect(known, `уровень ${index + 1}: символ "${char}"`).toBe(true);
       }
+    }
+  });
+
+  it("проходит проверку без ошибок и предупреждений", () => {
+    for (const [index, rows] of LEVELS.entries()) {
+      const result = validateLevelRows(rows);
+
+      expect(result.errors, LEVEL_NAMES[index]).toEqual([]);
+      expect(result.warnings, LEVEL_NAMES[index]).toEqual([]);
     }
   });
 });
