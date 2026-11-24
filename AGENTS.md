@@ -8,27 +8,30 @@
 index.html            игра
 editor.html           редактор уровней
 settings.html         настройки уровней
-settings.js           физика, жизни, скорость, размеры, задержки — источник правды
-levels/level1..8.js   готовые карты (не менять)
-levels/levels-list.js список уровней, названия, авторы
-js/                   game, world, player, enemies, boss, render, effects,
-                      input, sound, storage, progress, editor, settings-page, sprites
-sprites/              28 изображений
-css/                  стили игры, редактора, настроек
+src/core/             settings (физика, жизни, скорость, размеры, задержки — источник
+                      правды), storage, sound, input, canvas, sprites, effects, state
+src/game/             world, collision, player, enemies, boss, render, game, progress
+src/editor/           логика редактора
+src/settings-page/    логика страницы настроек
+src/data/levels/      level1..8.js (не менять), index.js — реестр уровней
+src/styles/           стили редактора и настроек
+public/sprites/       28 изображений
 Пак_уровней(20.11.26)/ 10 JSON из редактора — работы детей, источник для переноса
 _backup_original/     исходная версия проекта, не трогать
 _backup_levels_p1/    старые карты пяти уровней, не трогать
+tests/                тесты Vitest
+docs/AUDIT.md         аудит проекта, план этапов
 README.md             механики, формат уровней, идеи для уроков
 START_PROMPT.md       стартовое задание: цель, этапы, правила
 ```
 
 ## Команды
 
-Сейчас: открыть `index.html` (игра), `editor.html` (редактор), `settings.html` (настройки) в браузере.
+`npm install` — один раз; `npm run dev` — сервер разработки;
+`npm run build` — сборка в `dist/`; `npm run preview` — проверка сборки;
+`npm test` — тесты; `npm run lint` — ESLint.
 
-После этапа 2: `npm install`, `npm run dev`, `npm run build`, `npm test`, `npm run lint`.
-
-Перед коммитом: сборка и тесты проходят, игра и редактор проверены руками.
+Перед коммитом: lint, тесты и сборка проходят, игра и редактор проверены руками.
 
 ## Формат уровня
 
