@@ -1,0 +1,386 @@
+/* ============================================
+   НАСТРОЙКИ УРОВНЕЙ
+   ============================================ */
+
+:root {
+  --bg: #eef3f9;
+  --panel: #ffffff;
+  --text: #1f2937;
+  --muted: #5b6b7f;
+  --border: #d5deea;
+  --blue: #2f80ed;
+  --blue-dark: #1c5fc0;
+  --green: #27ae60;
+  --green-dark: #1d8a4b;
+  --red: #d64545;
+  --shadow: 0 6px 20px rgba(31, 41, 55, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  padding: 10px 16px;
+  color: var(--text);
+  background: #f9fbfe;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #eef5ff;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button.primary {
+  color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+button.primary:hover {
+  background: var(--blue-dark);
+}
+
+button.green {
+  color: #fff;
+  background: var(--green);
+  border-color: var(--green);
+}
+
+button.green:hover {
+  background: var(--green-dark);
+}
+
+button.wide {
+  width: 100%;
+}
+
+/* ---------- Верхняя панель ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 10px rgba(31, 41, 55, 0.06);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 22px;
+  white-space: nowrap;
+}
+
+.back-link {
+  padding: 8px 12px;
+  color: var(--blue);
+  font-weight: bold;
+  text-decoration: none;
+  background: #eaf2ff;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.back-link:hover {
+  background: #dbe9ff;
+}
+
+.top-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- Сетка ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.workspace {
+  min-width: 0;
+}
+
+.card {
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.field select {
+  width: 100%;
+  padding: 10px;
+  color: var(--text);
+  background: #f9fbfe;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+}
+
+.field select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.15);
+}
+
+.hint {
+  margin: 10px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.card.help p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.card.help p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Пресеты ---------- */
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.presets button {
+  flex: 1 1 40%;
+  padding: 9px 10px;
+}
+
+/* ---------- Поля настроек ---------- */
+
+.settings-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.setting-field {
+  padding: 14px;
+  background: #f9fbfe;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.setting-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.setting-head label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.setting-head input[type="number"] {
+  width: 88px;
+  padding: 7px 8px;
+  color: var(--text);
+  text-align: right;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  outline: none;
+}
+
+.setting-head input[type="number"]:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.15);
+}
+
+.setting-field input[type="range"] {
+  width: 100%;
+  margin: 4px 0 8px;
+  accent-color: var(--blue);
+}
+
+.setting-field .hint {
+  margin: 0;
+}
+
+/* ---------- Расширенные настройки ---------- */
+
+.advanced-panel {
+  margin-top: 18px;
+  padding: 14px;
+  background: #f4f7fc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.advanced-panel summary {
+  color: var(--blue-dark);
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+}
+
+.advanced-panel summary:hover {
+  color: var(--blue);
+}
+
+.advanced-panel[open] summary {
+  margin-bottom: 4px;
+}
+
+.advanced-panel .hint {
+  margin-top: 0;
+}
+
+.advanced-panel .settings-fields {
+  margin-top: 12px;
+}
+
+/* ---------- Действия и сообщения ---------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.status {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.status.ok {
+  color: var(--green-dark);
+}
+
+.status.warn {
+  color: #9a6700;
+}
+
+.status.error {
+  color: var(--red);
+}
+
+/* ---------- Всплывающее сообщение ---------- */
+
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  max-width: 420px;
+  padding: 12px 16px;
+  color: #fff;
+  background: #1f2937;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.success {
+  background: var(--green-dark);
+}
+
+.toast.error {
+  background: #a83232;
+}
+
+.toast.warn {
+  background: #8a5a00;
+}
+
+/* ---------- Узкие экраны ---------- */
+
+@media (max-width: 820px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .top-note {
+    display: none;
+  }
+}

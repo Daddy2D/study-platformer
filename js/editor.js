@@ -1,0 +1,2098 @@
+// ============================================
+// РЕДАКТОР УРОВНЕЙ
+// ============================================
+// Карта хранится как массив строк, как в файлах levels/*.js.
+// Внутри редактора удобнее массив массивов символов.
+
+const CELL_SIZE = 30;
+const MIN_WIDTH = 10;
+const MAX_WIDTH = 120;
+const MIN_HEIGHT = 8;
+const MAX_HEIGHT = 40;
+const MAX_UNDO = 80;
+
+// Описание всех клеток: цвет, буква и название для палитры
+const TILES = {
+  ".": { name: "Пусто", color: "#ffffff", letter: "", textColor: "#94a3b8" },
+  "G": { name: "Земля", color: "#a06a3b", letter: "G", textColor: "#ffffff" },
+  "P": { name: "Старт", color: "#2f80ed", letter: "P", textColor: "#ffffff" },
+  "X": { name: "Финиш", color: "#27ae60", letter: "X", textColor: "#ffffff" },
+  "C": { name: "Монета", color: "#ffd23d", letter: "C", textColor: "#7a5a00" },
+  "E": { name: "Враг", color: "#e74c3c", letter: "E", textColor: "#ffffff" },
+  "T": { name: "Стрелок", color: "#e67e22", letter: "T", textColor: "#ffffff" },
+  "S": { name: "Шипы", color: "#c0392b", letter: "S", textColor: "#ffffff" },
+  "F": { name: "Чекпоинт", color: "#16a085", letter: "F", textColor: "#ffffff" },
+  "M": { name: "Платформа →", color: "#8e44ad", letter: "M", textColor: "#ffffff" },
+  "V": { name: "Платформа ↑", color: "#6c5ce7", letter: "V", textColor: "#ffffff" },
+  "K": { name: "Ключ", color: "#f1c40f", letter: "K", textColor: "#6b5200" },
+  "D": { name: "Дверь", color: "#8b5a2b", letter: "D", textColor: "#ffffff" },
+  "B": { name: "Батут", color: "#e74c3c", letter: "B", textColor: "#ffffff" },
+  "L": { name: "Падающая", color: "#c08a4a", letter: "L", textColor: "#3f2a14" },
+  "O": { name: "Платформа 1-сторонняя", color: "#d9a441", letter: "O", textColor: "#4b2e12" },
+  "R": { name: "Разрушаемый блок", color: "#b8793f", letter: "R", textColor: "#ffffff" },
+  "H": { name: "Лестница", color: "#a06a3b", letter: "H", textColor: "#ffffff" },
+  "W": { name: "Пила", color: "#95a5a6", letter: "W", textColor: "#1f2937" },
+  "N": { name: "Пушка", color: "#6b7280", letter: "N", textColor: "#ffffff" },
+  "Z": { name: "Босс", color: "#7b2ff7", letter: "Z", textColor: "#ffffff" }
+};
+
+const PALETTE_ORDER = [
+  ".",
+  "G",
+  "P",
+  "X",
+  "C",
+  "E",
+  "T",
+  "S",
+  "F",
+  "M",
+  "V",
+  "K",
+  "D",
+  "B",
+  "L",
+  "O",
+  "R",
+  "H",
+  "W",
+  "N",
+  "Z"
+];
+
+// ---------- Ссылки на элементы страницы ----------
+
+const mapCanvas = document.getElementById("mapCanvas");
+const ctx = mapCanvas.getContext("2d");
+const mapScroll = document.getElementById("mapScroll");
+
+const levelNameInput = document.getElementById("levelName");
+const levelWidthInput = document.getElementById("levelWidth");
+const levelHeightInput = document.getElementById("levelHeight");
+const biomeSelect = document.getElementById("biomeSelect");
+
+const paletteElement = document.getElementById("palette");
+const paintTool = document.getElementById("paintTool");
+const eraseTool = document.getElementById("eraseTool");
+const rectTool = document.getElementById("rectTool");
+const selectTool = document.getElementById("selectTool");
+const copyBtn = document.getElementById("copyBtn");
+const pasteBtn = document.getElementById("pasteBtn");
+const undoBtn = document.getElementById("undoBtn");
+const redoBtn = document.getElementById("redoBtn");
+
+const templateSelect = document.getElementById("templateSelect");
+const templateBtn = document.getElementById("templateBtn");
+const miniMap = document.getElementById("miniMap");
+const miniCtx = miniMap.getContext("2d");
+const jumpStartBtn = document.getElementById("jumpStartBtn");
+const jumpFinishBtn = document.getElementById("jumpFinishBtn");
+
+const loadSelect = document.getElementById("loadSelect");
+const deleteBtn = document.getElementById("deleteBtn");
+const positionElement = document.getElementById("position");
+const selectionInfoElement = document.getElementById("selectionInfo");
+const statsElement = document.getElementById("stats");
+const validationElement = document.getElementById("validation");
+
+const toastElement = document.getElementById("toast");
+const importInput = document.getElementById("importInput");
+
+// ---------- Состояние редактора ----------
+
+let grid = [];
+let levelId = null;
+let levelBiome = "grass";
+let currentTool = "paint";
+let selectedTile = "G";
+
+let undoStack = [];
+let redoStack = [];
+let strokeStart = null;
+let painting = false;
+let lastCell = null;
+let hoverCell = null;
+let dirty = false;
+let importedSettings = null;
+let toastTimer = null;
+let draftTimer = null;
+
+let selection = null;
+let selecting = false;
+let rectStart = null;
+let rectEnd = null;
+let rectErase = false;
+let clipboard = null;
+let pasteMode = false;
+
+// ============================================
+// СОЗДАНИЕ И ГЕОМЕТРИЯ КАРТЫ
+// ============================================
+
+function createTemplateGrid(width, height) {
+  const nextGrid = [];
+
+  for (let y = 0; y < height; y++) {
+    nextGrid.push(new Array(width).fill("."));
+  }
+
+  // Нижние две строки — земля, чтобы новый уровень сразу можно было играть
+  for (let x = 0; x < width; x++) {
+    nextGrid[height - 2][x] = "G";
+    nextGrid[height - 1][x] = "G";
+  }
+
+  nextGrid[height - 3][2] = "P";
+  nextGrid[height - 3][width - 3] = "X";
+
+  return nextGrid;
+}
+
+function cloneGrid(source) {
+  return source.map(row => row.slice());
+}
+
+function rowsToStrings(source) {
+  return source.map(row => row.join(""));
+}
+
+function rowsKey(rows) {
+  return rows.join("\n");
+}
+
+function gridKey(source) {
+  return rowsKey(rowsToStrings(source));
+}
+
+function snapshotGrid() {
+  return rowsToStrings(grid);
+}
+
+function resizeCanvasToGrid() {
+  mapCanvas.width = grid[0].length * CELL_SIZE;
+  mapCanvas.height = grid.length * CELL_SIZE;
+}
+
+function normalizeRect(first, second) {
+  return {
+    x1: Math.min(first.x, second.x),
+    y1: Math.min(first.y, second.y),
+    x2: Math.max(first.x, second.x),
+    y2: Math.max(first.y, second.y)
+  };
+}
+
+function fillGridRect(target, x1, y1, x2, y2, char) {
+  for (let y = y1; y <= y2; y++) {
+    for (let x = x1; x <= x2; x++) {
+      if (target[y] && target[y][x] !== undefined) {
+        target[y][x] = char;
+      }
+    }
+  }
+}
+
+function scheduleDraftSave() {
+  clearTimeout(draftTimer);
+
+  draftTimer = setTimeout(() => {
+    saveEditorDraft({
+      name: levelNameInput.value,
+      rows: rowsToStrings(grid),
+      biome: levelBiome,
+      levelId: levelId
+    });
+  }, 500);
+}
+
+// ============================================
+// ШАБЛОНЫ УРОВНЕЙ
+// ============================================
+
+function createPlatformsTemplate() {
+  const template = createTemplateGrid(32, 12);
+
+  fillGridRect(template, 8, 8, 12, 8, "G");
+  fillGridRect(template, 18, 7, 22, 7, "G");
+  fillGridRect(template, 25, 9, 28, 9, "G");
+
+  for (let x = 8; x <= 12; x++) {
+    template[7][x] = "C";
+  }
+
+  template[6][20] = "C";
+  template[6][21] = "C";
+  template[9][26] = "C";
+  template[9][27] = "C";
+
+  template[9][15] = "E";
+  template[9][24] = "S";
+
+  return template;
+}
+
+function createSnowTemplate() {
+  const template = createTemplateGrid(32, 14);
+
+  fillGridRect(template, 5, 10, 8, 10, "G");
+  fillGridRect(template, 12, 8, 15, 8, "G");
+  fillGridRect(template, 19, 6, 22, 6, "G");
+  fillGridRect(template, 25, 9, 28, 9, "G");
+
+  template[9][6] = "C";
+  template[9][7] = "C";
+  template[7][13] = "C";
+  template[7][14] = "C";
+  template[5][20] = "C";
+  template[5][21] = "C";
+  template[8][26] = "C";
+  template[8][27] = "C";
+
+  template[12][9] = "S";
+  template[12][18] = "S";
+  template[10][23] = "O";
+  template[9][24] = "C";
+
+  return template;
+}
+
+function createCastleTemplate() {
+  const template = createTemplateGrid(32, 14);
+
+  fillGridRect(template, 5, 10, 8, 10, "G");
+  fillGridRect(template, 12, 8, 15, 8, "G");
+  fillGridRect(template, 19, 6, 22, 6, "G");
+  fillGridRect(template, 24, 10, 28, 10, "G");
+
+  template[9][6] = "C";
+  template[9][7] = "C";
+  template[7][13] = "C";
+  template[7][14] = "C";
+  template[5][20] = "C";
+  template[5][21] = "C";
+  template[9][25] = "C";
+  template[9][26] = "C";
+
+  template[12][10] = "S";
+  template[12][18] = "S";
+  template[9][23] = "R";
+  template[8][24] = "C";
+
+  return template;
+}
+
+function createMechanicsTemplate() {
+  const template = createTemplateGrid(40, 16);
+
+  fillGridRect(template, 7, 10, 10, 10, "O");
+  fillGridRect(template, 14, 9, 16, 9, "R");
+  fillGridRect(template, 15, 8, 15, 8, "R");
+
+  fillGridRect(template, 22, 7, 22, 13, "H");
+  fillGridRect(template, 20, 6, 24, 6, "G");
+  template[5][21] = "C";
+  template[5][22] = "C";
+  template[5][23] = "C";
+
+  template[8][28] = "W";
+  fillGridRect(template, 31, 12, 34, 12, "G");
+  template[11][32] = "N";
+
+  template[13][18] = "F";
+  template[12][8] = "C";
+  template[12][9] = "C";
+  template[11][15] = "C";
+  template[7][26] = "C";
+
+  return template;
+}
+
+function createTowerTemplate() {
+  const template = createTemplateGrid(32, 24);
+
+  // Убираем стандартный финиш и поднимаем его наверх.
+  template[21][29] = ".";
+
+  fillGridRect(template, 5, 18, 8, 18, "G");
+  fillGridRect(template, 11, 15, 14, 15, "G");
+  fillGridRect(template, 18, 12, 21, 12, "G");
+  fillGridRect(template, 24, 9, 27, 9, "G");
+  fillGridRect(template, 19, 6, 22, 6, "G");
+  fillGridRect(template, 26, 3, 30, 3, "G");
+
+  template[2][29] = "X";
+  template[11][19] = "F";
+  template[5][21] = "C";
+  template[5][20] = "C";
+  template[8][25] = "C";
+  template[8][26] = "C";
+  template[17][6] = "E";
+  template[14][12] = "E";
+  template[21][16] = "S";
+
+  return template;
+}
+
+function createCaveTemplate() {
+  const template = createTemplateGrid(40, 18);
+
+  fillGridRect(template, 5, 14, 9, 14, "G");
+  fillGridRect(template, 13, 11, 17, 11, "G");
+  fillGridRect(template, 21, 8, 25, 8, "G");
+  fillGridRect(template, 29, 5, 34, 5, "G");
+  fillGridRect(template, 34, 12, 37, 12, "G");
+
+  template[13][8] = "T";
+  template[10][15] = "T";
+  template[7][23] = "T";
+  template[4][32] = "E";
+  template[15][7] = "S";
+  template[15][12] = "S";
+  template[15][22] = "S";
+  template[13][9] = "C";
+  template[10][16] = "C";
+  template[7][24] = "C";
+  template[4][31] = "C";
+
+  return template;
+}
+
+function createBossTemplate() {
+  const template = createTemplateGrid(32, 14);
+
+  fillGridRect(template, 7, 9, 10, 9, "G");
+  fillGridRect(template, 21, 9, 24, 9, "G");
+  fillGridRect(template, 13, 7, 16, 7, "G");
+
+  template[11][16] = "Z";
+  template[8][9] = "C";
+  template[8][10] = "C";
+  template[8][22] = "C";
+  template[8][23] = "C";
+  template[10][3] = "F";
+
+  return template;
+}
+
+const TEMPLATES = {
+  empty: {
+    label: "Пустой уровень",
+    build: () => createTemplateGrid(24, 12)
+  },
+  platforms: {
+    label: "Платформы и монеты",
+    build: createPlatformsTemplate
+  },
+  snow: {
+    label: "Снежные вершины",
+    biome: "snow",
+    build: createSnowTemplate
+  },
+  castle: {
+    label: "Каменный замок",
+    biome: "castle",
+    build: createCastleTemplate
+  },
+  mechanics: {
+    label: "Новые механики",
+    build: createMechanicsTemplate
+  },
+  tower: {
+    label: "Высокая башня",
+    build: createTowerTemplate
+  },
+  cave: {
+    label: "Пещера со стрелками",
+    build: createCaveTemplate
+  },
+  boss: {
+    label: "Арена босса",
+    build: createBossTemplate
+  }
+};
+
+function buildTemplateOptions() {
+  templateSelect.innerHTML = "";
+
+  for (const [id, template] of Object.entries(TEMPLATES)) {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = template.label;
+    templateSelect.appendChild(option);
+  }
+
+  templateSelect.value = "empty";
+}
+
+function applyTemplate() {
+  const template = TEMPLATES[templateSelect.value];
+
+  if (!template) {
+    return;
+  }
+
+  if (
+    dirty &&
+    !confirm("Текущая карта будет заменена шаблоном. Продолжить?")
+  ) {
+    return;
+  }
+
+  undoStack = [];
+  redoStack = [];
+  levelId = null;
+
+  applyGrid(
+    rowsToStrings(template.build()),
+    template.label,
+    null,
+    true,
+    template.biome || "grass"
+  );
+
+  loadSelect.value = "";
+  updateUndoButtons();
+  updateDeleteButton();
+  showToast(`Шаблон «${template.label}» создан.`, "success");
+}
+
+// ============================================
+// МИНИ-КАРТА
+// ============================================
+
+function scrollToCell(x, y) {
+  const scrollX = x * CELL_SIZE - mapScroll.clientWidth / 2;
+  const scrollY = y * CELL_SIZE - mapScroll.clientHeight / 2;
+
+  mapScroll.scrollLeft = Math.max(0, scrollX);
+  mapScroll.scrollTop = Math.max(0, scrollY);
+  drawMiniMap();
+}
+
+function drawMiniMap() {
+  if (!grid.length || !grid[0]) {
+    return;
+  }
+
+  const width = miniMap.width;
+  const height = miniMap.height;
+  const columns = grid[0].length;
+  const rows = grid.length;
+  const scaleX = width / columns;
+  const scaleY = height / rows;
+
+  miniCtx.clearRect(0, 0, width, height);
+  miniCtx.fillStyle = "#ffffff";
+  miniCtx.fillRect(0, 0, width, height);
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < columns; x++) {
+      const char = grid[y][x];
+
+      if (char === ".") {
+        continue;
+      }
+
+      const info = TILES[char] || TILES["."];
+      miniCtx.fillStyle = info.color;
+      miniCtx.fillRect(
+        Math.floor(x * scaleX),
+        Math.floor(y * scaleY),
+        Math.ceil(scaleX),
+        Math.ceil(scaleY)
+      );
+    }
+  }
+
+  const viewX = (mapScroll.scrollLeft / CELL_SIZE) * scaleX;
+  const viewY = (mapScroll.scrollTop / CELL_SIZE) * scaleY;
+  const viewW = (mapScroll.clientWidth / CELL_SIZE) * scaleX;
+  const viewH = (mapScroll.clientHeight / CELL_SIZE) * scaleY;
+
+  miniCtx.strokeStyle = "#2f80ed";
+  miniCtx.lineWidth = 2;
+  miniCtx.strokeRect(
+    Math.max(1, viewX),
+    Math.max(1, viewY),
+    Math.max(4, Math.min(width - viewX - 2, viewW)),
+    Math.max(4, Math.min(height - viewY - 2, viewH))
+  );
+}
+
+// ============================================
+// РИСОВАНИЕ КАРТЫ
+// ============================================
+
+function drawMap() {
+  const width = mapCanvas.width;
+  const height = mapCanvas.height;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      const char = grid[y][x];
+      const info = TILES[char] || TILES["."];
+      const px = x * CELL_SIZE;
+      const py = y * CELL_SIZE;
+
+      ctx.fillStyle = info.color;
+      ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+
+      // Лёгкая фактура земли
+      if (char === "G") {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+        ctx.fillRect(px, py, CELL_SIZE, 5);
+      }
+
+      ctx.strokeStyle = "rgba(31, 41, 55, 0.15)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px + 0.5, py + 0.5, CELL_SIZE - 1, CELL_SIZE - 1);
+
+      if (info.letter) {
+        ctx.fillStyle = info.textColor;
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(info.letter, px + CELL_SIZE / 2, py + CELL_SIZE / 2 + 1);
+      }
+    }
+  }
+
+  if (selection) {
+    ctx.fillStyle = "rgba(47, 128, 237, 0.16)";
+    ctx.fillRect(
+      selection.x1 * CELL_SIZE,
+      selection.y1 * CELL_SIZE,
+      (selection.x2 - selection.x1 + 1) * CELL_SIZE,
+      (selection.y2 - selection.y1 + 1) * CELL_SIZE
+    );
+
+    ctx.strokeStyle = "#2f80ed";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(
+      selection.x1 * CELL_SIZE + 1.5,
+      selection.y1 * CELL_SIZE + 1.5,
+      (selection.x2 - selection.x1 + 1) * CELL_SIZE - 3,
+      (selection.y2 - selection.y1 + 1) * CELL_SIZE - 3
+    );
+  }
+
+  if (painting && currentTool === "rect" && rectStart && rectEnd) {
+    const preview = normalizeRect(rectStart, rectEnd);
+
+    ctx.fillStyle = "rgba(47, 128, 237, 0.22)";
+    ctx.fillRect(
+      preview.x1 * CELL_SIZE,
+      preview.y1 * CELL_SIZE,
+      (preview.x2 - preview.x1 + 1) * CELL_SIZE,
+      (preview.y2 - preview.y1 + 1) * CELL_SIZE
+    );
+
+    ctx.strokeStyle = "#1c5fc0";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      preview.x1 * CELL_SIZE + 1,
+      preview.y1 * CELL_SIZE + 1,
+      (preview.x2 - preview.x1 + 1) * CELL_SIZE - 2,
+      (preview.y2 - preview.y1 + 1) * CELL_SIZE - 2
+    );
+  }
+
+  if (currentTool === "paste" && clipboard && hoverCell) {
+    ctx.globalAlpha = 0.55;
+
+    for (let y = 0; y < clipboard.h; y++) {
+      for (let x = 0; x < clipboard.w; x++) {
+        const targetX = hoverCell.x + x;
+        const targetY = hoverCell.y + y;
+
+        if (
+          targetY < 0 ||
+          targetY >= grid.length ||
+          targetX < 0 ||
+          targetX >= grid[0].length
+        ) {
+          continue;
+        }
+
+        const char = clipboard.rows[y][x];
+        const info = TILES[char] || TILES["."];
+
+        ctx.fillStyle = info.color;
+        ctx.fillRect(
+          targetX * CELL_SIZE,
+          targetY * CELL_SIZE,
+          CELL_SIZE,
+          CELL_SIZE
+        );
+      }
+    }
+
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = "#2f80ed";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      hoverCell.x * CELL_SIZE + 1,
+      hoverCell.y * CELL_SIZE + 1,
+      clipboard.w * CELL_SIZE - 2,
+      clipboard.h * CELL_SIZE - 2
+    );
+  }
+
+  if (hoverCell) {
+    ctx.strokeStyle = "#2f80ed";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(
+      hoverCell.x * CELL_SIZE + 1.5,
+      hoverCell.y * CELL_SIZE + 1.5,
+      CELL_SIZE - 3,
+      CELL_SIZE - 3
+    );
+  }
+}
+
+// ============================================
+// КЛЕТКИ И РИСОВАНИЕ МЫШЬЮ
+// ============================================
+
+function clearTile(char) {
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      if (grid[y][x] === char) {
+        grid[y][x] = ".";
+      }
+    }
+  }
+}
+
+// Старт и финиш должны быть в единственном экземпляре
+function paintCell(x, y, char) {
+  if (grid[y][x] === char) {
+    return false;
+  }
+
+  if (char === "P" || char === "X") {
+    clearTile(char);
+  }
+
+  grid[y][x] = char;
+  return true;
+}
+
+function cellFromEvent(event) {
+  const rect = mapCanvas.getBoundingClientRect();
+
+  if (rect.width === 0 || rect.height === 0) {
+    return null;
+  }
+
+  const scaleX = mapCanvas.width / rect.width;
+  const scaleY = mapCanvas.height / rect.height;
+
+  const x = Math.floor(((event.clientX - rect.left) * scaleX) / CELL_SIZE);
+  const y = Math.floor(((event.clientY - rect.top) * scaleY) / CELL_SIZE);
+
+  if (x < 0 || y < 0 || x >= grid[0].length || y >= grid.length) {
+    return null;
+  }
+
+  return { x: x, y: y };
+}
+
+function plotLine(x0, y0, x1, y1, callback) {
+  let x = x0;
+  let y = y0;
+
+  const dx = Math.abs(x1 - x0);
+  const sx = x0 < x1 ? 1 : -1;
+  const dy = -Math.abs(y1 - y0);
+  const sy = y0 < y1 ? 1 : -1;
+
+  let error = dx + dy;
+
+  while (true) {
+    callback(x, y);
+
+    if (x === x1 && y === y1) {
+      break;
+    }
+
+    const doubleError = 2 * error;
+
+    if (doubleError >= dy) {
+      error += dy;
+      x += sx;
+    }
+
+    if (doubleError <= dx) {
+      error += dx;
+      y += sy;
+    }
+  }
+}
+
+function paintAt(cell, char) {
+  let changed = false;
+
+  if (lastCell) {
+    plotLine(lastCell.x, lastCell.y, cell.x, cell.y, (x, y) => {
+      if (paintCell(x, y, char)) {
+        changed = true;
+      }
+    });
+  } else if (paintCell(cell.x, cell.y, char)) {
+    changed = true;
+  }
+
+  lastCell = cell;
+
+  if (changed) {
+    drawMap();
+    updateStats();
+    updateValidation();
+  }
+}
+
+function beginStroke() {
+  strokeStart = snapshotGrid();
+  painting = true;
+  lastCell = null;
+}
+
+function endStroke() {
+  if (!painting) {
+    return;
+  }
+
+  painting = false;
+  lastCell = null;
+
+  if (strokeStart && rowsKey(strokeStart) !== gridKey(grid)) {
+    undoStack.push(strokeStart);
+
+    if (undoStack.length > MAX_UNDO) {
+      undoStack.shift();
+    }
+
+    redoStack = [];
+    dirty = true;
+    updateUndoButtons();
+    scheduleDraftSave();
+    drawMiniMap();
+  }
+
+  strokeStart = null;
+}
+
+function updateSelectionInfo() {
+  if (!selection) {
+    selectionInfoElement.textContent = "";
+    return;
+  }
+
+  const width = selection.x2 - selection.x1 + 1;
+  const height = selection.y2 - selection.y1 + 1;
+
+  selectionInfoElement.textContent = `Выделение: ${width} × ${height}`;
+}
+
+function updateSelectionButtons() {
+  copyBtn.disabled = !selection;
+  pasteBtn.disabled = !clipboard;
+}
+
+function clearSelectionState() {
+  selection = null;
+  selecting = false;
+  rectStart = null;
+  rectEnd = null;
+  pasteMode = false;
+  updateSelectionInfo();
+  updateSelectionButtons();
+}
+
+function copySelection() {
+  if (!selection) {
+    return;
+  }
+
+  const width = selection.x2 - selection.x1 + 1;
+  const height = selection.y2 - selection.y1 + 1;
+  const rows = [];
+
+  for (let y = selection.y1; y <= selection.y2; y++) {
+    rows.push(grid[y].slice(selection.x1, selection.x2 + 1));
+  }
+
+  clipboard = { w: width, h: height, rows: rows };
+  updateSelectionButtons();
+  showToast(`Скопировано: ${width} × ${height}.`, "success");
+  drawMap();
+}
+
+function deleteSelection() {
+  if (!selection) {
+    return;
+  }
+
+  beginStroke();
+
+  for (let y = selection.y1; y <= selection.y2; y++) {
+    for (let x = selection.x1; x <= selection.x2; x++) {
+      paintCell(x, y, ".");
+    }
+  }
+
+  endStroke();
+  selection = null;
+  updateSelectionInfo();
+  updateSelectionButtons();
+  drawMap();
+  updateStats();
+  updateValidation();
+}
+
+function cutSelection() {
+  if (!selection) {
+    return;
+  }
+
+  copySelection();
+  deleteSelection();
+}
+
+function enterPasteMode() {
+  if (!clipboard) {
+    return;
+  }
+
+  setTool("paste");
+  pasteMode = true;
+  showToast("Кликни по карте, чтобы вставить. Esc — выйти.", "success");
+  drawMap();
+}
+
+function pasteClipboard(anchor) {
+  if (!clipboard) {
+    return;
+  }
+
+  let changed = false;
+
+  for (let y = 0; y < clipboard.h; y++) {
+    for (let x = 0; x < clipboard.w; x++) {
+      const targetX = anchor.x + x;
+      const targetY = anchor.y + y;
+
+      if (
+        targetY < 0 ||
+        targetY >= grid.length ||
+        targetX < 0 ||
+        targetX >= grid[0].length
+      ) {
+        continue;
+      }
+
+      if (paintCell(targetX, targetY, clipboard.rows[y][x])) {
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) {
+    drawMap();
+    updateStats();
+    updateValidation();
+  }
+}
+
+function applyRectFill() {
+  if (!rectStart || !rectEnd) {
+    return;
+  }
+
+  const rect = normalizeRect(rectStart, rectEnd);
+  const char = rectErase ? "." : selectedTile;
+  let changed = false;
+
+  for (let y = rect.y1; y <= rect.y2; y++) {
+    for (let x = rect.x1; x <= rect.x2; x++) {
+      if (paintCell(x, y, char)) {
+        changed = true;
+      }
+    }
+  }
+
+  rectStart = null;
+  rectEnd = null;
+
+  if (changed) {
+    drawMap();
+    updateStats();
+    updateValidation();
+  }
+}
+
+mapCanvas.addEventListener("pointerdown", event => {
+  if (event.button !== 0 && event.button !== 2) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const cell = cellFromEvent(event);
+
+  if (!cell) {
+    return;
+  }
+
+  mapCanvas.setPointerCapture(event.pointerId);
+
+  if (currentTool === "select") {
+    if (event.button === 2) {
+      selection = null;
+      updateSelectionInfo();
+      updateSelectionButtons();
+      drawMap();
+      return;
+    }
+
+    selecting = true;
+    selection = {
+      x1: cell.x,
+      y1: cell.y,
+      x2: cell.x,
+      y2: cell.y
+    };
+    updateSelectionInfo();
+    updateSelectionButtons();
+    drawMap();
+    return;
+  }
+
+  if (currentTool === "paste" && clipboard) {
+    if (event.button === 2) {
+      setTool("paint");
+      return;
+    }
+
+    beginStroke();
+    pasteClipboard(cell);
+    endStroke();
+    return;
+  }
+
+  if (currentTool === "rect") {
+    beginStroke();
+    rectStart = { x: cell.x, y: cell.y };
+    rectEnd = { x: cell.x, y: cell.y };
+    rectErase = event.button === 2;
+    drawMap();
+    return;
+  }
+
+  beginStroke();
+
+  const char =
+    event.button === 2 || currentTool === "erase" ? "." : selectedTile;
+
+  paintAt(cell, char);
+});
+
+mapCanvas.addEventListener("pointermove", event => {
+  const cell = cellFromEvent(event);
+
+  hoverCell = cell;
+  updatePosition(cell);
+
+  if (selecting && cell) {
+    selection.x2 = cell.x;
+    selection.y2 = cell.y;
+    updateSelectionInfo();
+  } else if (painting && currentTool === "rect" && cell) {
+    rectEnd = { x: cell.x, y: cell.y };
+  } else if (
+    painting &&
+    (currentTool === "paint" || currentTool === "erase")
+  ) {
+    if (!cell) {
+      lastCell = null;
+    } else {
+      paintAt(cell, currentTool === "erase" ? "." : selectedTile);
+    }
+  }
+
+  drawMap();
+});
+
+mapCanvas.addEventListener("pointerup", () => {
+  if (selecting) {
+    selecting = false;
+    updateSelectionButtons();
+    drawMap();
+    return;
+  }
+
+  if (painting && currentTool === "rect") {
+    applyRectFill();
+    endStroke();
+    drawMap();
+    return;
+  }
+
+  endStroke();
+});
+
+mapCanvas.addEventListener("pointercancel", () => {
+  if (selecting) {
+    selecting = false;
+    updateSelectionButtons();
+  }
+
+  if (painting && currentTool === "rect") {
+    rectStart = null;
+    rectEnd = null;
+  }
+
+  endStroke();
+  drawMap();
+});
+
+mapCanvas.addEventListener("pointerleave", () => {
+  if (!painting && !selecting) {
+    hoverCell = null;
+    updatePosition(null);
+    drawMap();
+  }
+});
+
+mapCanvas.addEventListener("contextmenu", event => {
+  event.preventDefault();
+});
+
+// ============================================
+// ПАЛИТРА И ИНСТРУМЕНТЫ
+// ============================================
+
+function buildPalette() {
+  paletteElement.innerHTML = "";
+
+  for (const char of PALETTE_ORDER) {
+    const info = TILES[char];
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "palette-item";
+    button.dataset.tile = char;
+    button.title = info.name;
+
+    const swatch = document.createElement("span");
+    swatch.className = "swatch";
+    swatch.textContent = info.letter || "·";
+
+    // У пустой клетки белый фон — делаем рамку темнее
+    swatch.style.background = info.color;
+    swatch.style.color = info.textColor;
+
+    if (char === ".") {
+      swatch.style.borderColor = "#94a3b8";
+      swatch.style.textShadow = "none";
+    }
+
+    const name = document.createElement("span");
+    name.className = "palette-name";
+    name.textContent = info.name;
+
+    button.appendChild(swatch);
+    button.appendChild(name);
+
+    button.addEventListener("click", () => {
+      selectedTile = char;
+      setTool("paint");
+    });
+
+    paletteElement.appendChild(button);
+  }
+
+  updatePaletteActive();
+}
+
+function updatePaletteActive() {
+  const items = paletteElement.querySelectorAll(".palette-item");
+
+  for (const item of items) {
+    const active =
+      (currentTool === "paint" || currentTool === "rect") &&
+      item.dataset.tile === selectedTile;
+
+    item.classList.toggle("active", active);
+  }
+}
+
+function setTool(tool) {
+  currentTool = tool;
+
+  if (tool !== "paste") {
+    pasteMode = false;
+  }
+
+  if (tool !== "select") {
+    selection = null;
+    selecting = false;
+    updateSelectionInfo();
+    updateSelectionButtons();
+  }
+
+  paintTool.classList.toggle("active", tool === "paint");
+  eraseTool.classList.toggle("active", tool === "erase");
+  rectTool.classList.toggle("active", tool === "rect");
+  selectTool.classList.toggle("active", tool === "select");
+  pasteBtn.classList.toggle("active", tool === "paste");
+
+  updatePaletteActive();
+  updatePosition(hoverCell);
+  drawMap();
+}
+
+function updatePosition(cell) {
+  if (!cell) {
+    positionElement.textContent = "Клетка: —";
+    return;
+  }
+
+  const char = grid[cell.y] ? grid[cell.y][cell.x] : ".";
+  const info = TILES[char] || TILES["."];
+
+  positionElement.textContent =
+    `Клетка: ${cell.x + 1}, ${cell.y + 1} — ${info.name}`;
+}
+
+paintTool.addEventListener("click", () => setTool("paint"));
+eraseTool.addEventListener("click", () => setTool("erase"));
+rectTool.addEventListener("click", () => setTool("rect"));
+selectTool.addEventListener("click", () => setTool("select"));
+
+copyBtn.addEventListener("click", copySelection);
+pasteBtn.addEventListener("click", enterPasteMode);
+templateBtn.addEventListener("click", applyTemplate);
+
+miniMap.addEventListener("pointerdown", event => {
+  if (!grid.length || !grid[0]) {
+    return;
+  }
+
+  const rect = miniMap.getBoundingClientRect();
+
+  if (rect.width === 0 || rect.height === 0) {
+    return;
+  }
+
+  const x = Math.floor(
+    ((event.clientX - rect.left) / rect.width) * grid[0].length
+  );
+
+  const y = Math.floor(
+    ((event.clientY - rect.top) / rect.height) * grid.length
+  );
+
+  scrollToCell(
+    Math.max(0, Math.min(grid[0].length - 1, x)),
+    Math.max(0, Math.min(grid.length - 1, y))
+  );
+});
+
+jumpStartBtn.addEventListener("click", () => {
+  const start = findTile("P");
+
+  if (start) {
+    scrollToCell(start.x, start.y);
+  }
+});
+
+jumpFinishBtn.addEventListener("click", () => {
+  const finish = findTile("X");
+
+  if (finish) {
+    scrollToCell(finish.x, finish.y);
+  }
+});
+
+mapScroll.addEventListener("scroll", drawMiniMap);
+window.addEventListener("resize", drawMiniMap);
+
+// ============================================
+// ПРОВЕРКА УРОВНЯ
+// ============================================
+
+function countTiles() {
+  const counts = {};
+
+  for (const char of PALETTE_ORDER) {
+    counts[char] = 0;
+  }
+
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      const char = grid[y][x];
+
+      if (counts[char] === undefined) {
+        counts[char] = 0;
+      }
+
+      counts[char] += 1;
+    }
+  }
+
+  return counts;
+}
+
+function findTile(char) {
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      if (grid[y][x] === char) {
+        return { x: x, y: y };
+      }
+    }
+  }
+
+  return null;
+}
+
+function validateLevel() {
+  const errors = [];
+  const warnings = [];
+  const counts = countTiles();
+  const allowed = new Set(PALETTE_ORDER);
+  const unknown = new Set();
+
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      if (!allowed.has(grid[y][x])) {
+        unknown.add(grid[y][x]);
+      }
+    }
+  }
+
+  if (unknown.size > 0) {
+    errors.push("неизвестные символы: " + Array.from(unknown).join(" "));
+  }
+
+  const starts = counts.P || 0;
+  const finishes = counts.X || 0;
+
+  if (starts === 0) {
+    errors.push("поставь старт P");
+  }
+
+  if (starts > 1) {
+    errors.push("старт P должен быть один");
+  }
+
+  if (finishes === 0) {
+    errors.push("поставь финиш X");
+  }
+
+  if (finishes > 1) {
+    warnings.push("финишей несколько, лучше оставить один");
+  }
+
+  if ((counts.G || 0) === 0) {
+    warnings.push("на карте нет земли G");
+  }
+
+  if (starts === 1) {
+    const start = findTile("P");
+    const below = grid[start.y + 1] ? grid[start.y + 1][start.x] : null;
+
+    if (below !== "G" && below !== "D") {
+      warnings.push("под стартом P нет земли — игрок сразу упадёт");
+    }
+  }
+
+  if ((counts.D || 0) > 0 && (counts.K || 0) === 0) {
+    warnings.push("есть дверь D, но нет ключа K");
+  }
+
+  if ((counts.D || 0) > 0) {
+    const doorCell = findTile("D");
+    const aboveDoor = grid[doorCell.y - 2]
+      ? grid[doorCell.y - 2][doorCell.x]
+      : null;
+
+    // Дверь занимает две клетки. Если над ней нет земли,
+    // игрок сможет перепрыгнуть дверь без ключа.
+    if (aboveDoor !== "G") {
+      warnings.push("над дверью D нет земли — её можно перепрыгнуть");
+    }
+  }
+
+  const bosses = counts.Z || 0;
+
+  if (bosses > 1) {
+    errors.push("босс Z должен быть один");
+  }
+
+  if (bosses === 1) {
+    const bossCell = findTile("Z");
+    const below = grid[bossCell.y + 1]
+      ? grid[bossCell.y + 1][bossCell.x]
+      : null;
+
+    if (below !== "G") {
+      warnings.push("под боссом Z нет земли — он может упасть");
+    }
+
+    const above = grid[bossCell.y - 1]
+      ? grid[bossCell.y - 1][bossCell.x]
+      : null;
+
+    if (above === "G") {
+      warnings.push("над боссом Z мало места — поставь его ниже");
+    }
+  }
+
+  return {
+    errors: errors,
+    warnings: warnings,
+    counts: counts
+  };
+}
+
+function updateStats() {
+  const counts = countTiles();
+  const width = grid[0] ? grid[0].length : 0;
+
+  statsElement.textContent =
+    `${width} × ${grid.length}` +
+    ` · монет: ${counts.C || 0}` +
+    ` · врагов: ${(counts.E || 0) + (counts.T || 0)}`;
+}
+
+function updateValidation() {
+  const result = validateLevel();
+
+  validationElement.classList.remove("ok", "warn", "error");
+
+  if (result.errors.length > 0) {
+    validationElement.classList.add("error");
+    validationElement.textContent = "Проверка: " + result.errors.join("; ");
+    return;
+  }
+
+  if (result.warnings.length > 0) {
+    validationElement.classList.add("warn");
+    validationElement.textContent = "Проверка: " + result.warnings.join("; ");
+    return;
+  }
+
+  validationElement.classList.add("ok");
+  validationElement.textContent = "Проверка: всё хорошо";
+}
+
+// ============================================
+// ЗАГРУЗКА, СОХРАНЕНИЕ, ТЕСТ
+// ============================================
+
+function applyGrid(rows, name, id, markDirty, biome) {
+  const cleanRows = normalizeLevelRows(rows);
+
+  if (!cleanRows) {
+    showToast("Карта не подходит: нужны строки одной длины (от 8 до 120 клеток).", "error");
+    return false;
+  }
+
+  grid = cleanRows.map(row => row.split(""));
+
+  levelId = id || null;
+  levelBiome = biome === "snow" || biome === "castle"
+    ? biome
+    : "grass";
+  biomeSelect.value = levelBiome;
+  importedSettings = null;
+  levelNameInput.value = name || "Мой уровень";
+
+  levelWidthInput.value = grid[0].length;
+  levelHeightInput.value = grid.length;
+
+  resizeCanvasToGrid();
+  drawMap();
+  updateStats();
+  updateValidation();
+  updateUndoButtons();
+  updateDeleteButton();
+  updatePosition(null);
+  clearSelectionState();
+  drawMiniMap();
+  scheduleDraftSave();
+
+  dirty = Boolean(markDirty);
+
+  return true;
+}
+
+function resetToNewLevel(askFirst, quiet) {
+  if (
+    askFirst &&
+    dirty &&
+    !confirm("Несохранённые изменения будут потеряны. Создать новый уровень?")
+  ) {
+    return;
+  }
+
+  const template = createTemplateGrid(24, 12);
+
+  undoStack = [];
+  redoStack = [];
+  levelId = null;
+  clearEditorDraft();
+
+  applyGrid(rowsToStrings(template), "Мой уровень", null, false, "grass");
+
+  loadSelect.value = "";
+  updateUndoButtons();
+
+  if (!quiet) {
+    showToast("Новый уровень создан");
+  }
+}
+
+function refreshLoadOptions(selectedValue) {
+  const previous = selectedValue === undefined ? loadSelect.value : selectedValue;
+
+  loadSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "— выбери уровень —";
+  loadSelect.appendChild(placeholder);
+
+  const builtinGroup = document.createElement("optgroup");
+  builtinGroup.label = "Готовые уровни";
+
+  LEVELS.forEach((rows, index) => {
+    const option = document.createElement("option");
+    option.value = `builtin:${index}`;
+    option.textContent = `${index + 1}. ${LEVEL_NAMES[index]}`;
+    builtinGroup.appendChild(option);
+  });
+
+  loadSelect.appendChild(builtinGroup);
+
+  const customLevels = getCustomLevels();
+  const customGroup = document.createElement("optgroup");
+  customGroup.label = "Мои уровни";
+
+  if (customLevels.length === 0) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Пока нет сохранённых уровней";
+    option.disabled = true;
+    customGroup.appendChild(option);
+  } else {
+    for (const level of customLevels) {
+      const option = document.createElement("option");
+      option.value = `custom:${level.id}`;
+      option.textContent = level.name;
+      customGroup.appendChild(option);
+    }
+  }
+
+  loadSelect.appendChild(customGroup);
+
+  const hasPrevious = Array.from(loadSelect.options).some(
+    option => option.value === previous
+  );
+
+  loadSelect.value = hasPrevious ? previous : "";
+}
+
+function loadSelectedLevel() {
+  const value = loadSelect.value;
+
+  if (!value) {
+    showToast("Сначала выбери уровень в списке.", "error");
+    return;
+  }
+
+  if (value.startsWith("builtin:")) {
+    const index = Number(value.split(":")[1]);
+    const rows = normalizeLevelRows(LEVELS[index]);
+
+    if (!rows) {
+      showToast("Не удалось прочитать готовый уровень.", "error");
+      return;
+    }
+
+    if (dirty && !confirm("Несохранённые изменения будут потеряны. Загрузить уровень?")) {
+      return;
+    }
+
+    undoStack = [];
+    redoStack = [];
+    updateUndoButtons();
+
+    const name = `${LEVEL_NAMES[index]} (копия)`;
+
+    applyGrid(
+      rows,
+      name,
+      null,
+      true,
+      LEVEL_BIOMES[index] || "grass"
+    );
+    showToast("Готовый уровень загружен. «Сохранить» создаст твою копию.");
+    return;
+  }
+
+  if (value.startsWith("custom:")) {
+    const id = value.slice("custom:".length);
+    const level = getCustomLevel(id);
+
+    if (!level) {
+      showToast("Уровень не найден. Обнови список.", "error");
+      refreshLoadOptions("");
+      return;
+    }
+
+    if (dirty && !confirm("Несохранённые изменения будут потеряны. Загрузить уровень?")) {
+      return;
+    }
+
+    undoStack = [];
+    redoStack = [];
+    updateUndoButtons();
+
+    applyGrid(
+      level.rows,
+      level.name,
+      level.id,
+      false,
+      level.biome || "grass"
+    );
+    showToast(`Загружен уровень «${level.name}».`);
+  }
+}
+
+function saveCurrentLevel() {
+  const result = validateLevel();
+
+  if (result.errors.length > 0) {
+    updateValidation();
+    showToast("Нельзя сохранить: " + result.errors.join("; "), "error");
+    return;
+  }
+
+  const name = levelNameInput.value.trim() || "Мой уровень";
+  const rows = rowsToStrings(grid);
+
+  const saved = saveCustomLevel({
+    id: levelId,
+    name: name,
+    rows: rows,
+    biome: levelBiome
+  });
+
+  if (!saved) {
+    showToast("Не удалось сохранить уровень в браузере. Проверь настройки.", "error");
+    return;
+  }
+
+  levelId = saved.id;
+  levelNameInput.value = saved.name;
+  dirty = false;
+
+  if (draftTimer) {
+    clearTimeout(draftTimer);
+    draftTimer = null;
+  }
+
+  clearEditorDraft();
+  updateSelectionButtons();
+
+  // Настройки, пришедшие вместе с импортированным JSON,
+  // привязываем к новому id уровня.
+  if (importedSettings) {
+    saveLevelSettings(`custom:${saved.id}`, importedSettings);
+    importedSettings = null;
+  }
+
+  refreshLoadOptions(`custom:${saved.id}`);
+  updateDeleteButton();
+
+  if (result.warnings.length > 0) {
+    showToast("Сохранено, но есть замечания: " + result.warnings.join("; "), "warn");
+  } else {
+    showToast(`Уровень «${saved.name}» сохранён.`, "success");
+  }
+}
+
+function testCurrentLevel() {
+  const result = validateLevel();
+
+  if (result.errors.length > 0) {
+    updateValidation();
+    showToast("Перед проверкой исправь: " + result.errors.join("; "), "error");
+    return;
+  }
+
+  const name = levelNameInput.value.trim() || "Проверка уровня";
+  const rows = rowsToStrings(grid);
+
+  if (!saveTestLevel({ name: name, rows: rows, biome: levelBiome })) {
+    showToast("Не удалось подготовить уровень к проверке.", "error");
+    return;
+  }
+
+  const testWindow = window.open("index.html?test=1", "_blank");
+
+  if (!testWindow) {
+    showToast("Браузер заблокировал новую вкладку. Разреши всплывающие окна.", "error");
+    return;
+  }
+
+  showToast("Проверка открыта в новой вкладке.", "success");
+}
+
+// ============================================
+// ОТМЕНА И ВОЗВРАТ
+// ============================================
+
+function updateUndoButtons() {
+  undoBtn.disabled = undoStack.length === 0;
+  redoBtn.disabled = redoStack.length === 0;
+}
+
+function undo() {
+  if (undoStack.length === 0) {
+    return;
+  }
+
+  redoStack.push(snapshotGrid());
+
+  const previous = undoStack.pop();
+
+  applyGrid(
+    previous,
+    levelNameInput.value,
+    levelId,
+    true,
+    levelBiome
+  );
+  showToast("Действие отменено");
+}
+
+function redo() {
+  if (redoStack.length === 0) {
+    return;
+  }
+
+  undoStack.push(snapshotGrid());
+
+  const next = redoStack.pop();
+
+  applyGrid(
+    next,
+    levelNameInput.value,
+    levelId,
+    true,
+    levelBiome
+  );
+  showToast("Действие возвращено");
+}
+
+undoBtn.addEventListener("click", undo);
+redoBtn.addEventListener("click", redo);
+
+// ============================================
+// РАЗМЕР, НОВЫЙ, УДАЛЕНИЕ
+// ============================================
+
+function applyResize() {
+  const width = Math.round(
+    Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Number(levelWidthInput.value) || 24))
+  );
+
+  const height = Math.round(
+    Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, Number(levelHeightInput.value) || 12))
+  );
+
+  const oldWidth = grid[0].length;
+  const oldHeight = grid.length;
+
+  if (width === oldWidth && height === oldHeight) {
+    showToast("Размер не изменился.");
+    return;
+  }
+
+  const before = snapshotGrid();
+  const nextGrid = [];
+
+  for (let y = 0; y < height; y++) {
+    const row = new Array(width).fill(".");
+
+    for (let x = 0; x < width; x++) {
+      if (y < oldHeight && x < oldWidth) {
+        row[x] = grid[y][x];
+      }
+    }
+
+    nextGrid.push(row);
+  }
+
+  grid = nextGrid;
+
+  undoStack.push(before);
+  redoStack = [];
+
+  levelWidthInput.value = width;
+  levelHeightInput.value = height;
+
+  resizeCanvasToGrid();
+  drawMap();
+  updateStats();
+  updateValidation();
+  updateUndoButtons();
+  updatePosition(null);
+  clearSelectionState();
+  drawMiniMap();
+  scheduleDraftSave();
+
+  dirty = true;
+
+  showToast(`Новый размер: ${width} × ${height}`);
+}
+
+function updateDeleteButton() {
+  deleteBtn.disabled = !(levelId && getCustomLevel(levelId));
+}
+
+function deleteCurrentLevel() {
+  if (!levelId) {
+    return;
+  }
+
+  const level = getCustomLevel(levelId);
+
+  if (!level) {
+    updateDeleteButton();
+    return;
+  }
+
+  if (!confirm(`Удалить уровень «${level.name}» из браузера?`)) {
+    return;
+  }
+
+  if (!deleteCustomLevel(levelId)) {
+    showToast("Не удалось удалить уровень.", "error");
+    return;
+  }
+
+  levelId = null;
+  dirty = true;
+
+  refreshLoadOptions("");
+  updateDeleteButton();
+
+  showToast("Уровень удалён. Нажми «Сохранить», если хочешь вернуть его.", "success");
+}
+
+// ============================================
+// ЭКСПОРТ И ИМПОРТ JSON
+// ============================================
+
+function safeFileName(name) {
+  const cleaned = name
+    .trim()
+    .replace(/[^a-zA-Zа-яА-Я0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return cleaned || "level";
+}
+
+function exportCurrentLevel() {
+  const name = levelNameInput.value.trim() || "Мой уровень";
+
+  const data = {
+    version: 1,
+    name: name,
+    biome: levelBiome,
+    rows: rowsToStrings(grid),
+    updatedAt: Date.now()
+  };
+
+  if (levelId) {
+    const settings = getLevelSettings(`custom:${levelId}`);
+
+    if (settings) {
+      data.settings = settings;
+    }
+  }
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `${safeFileName(name)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  showToast("Файл JSON скачан.", "success");
+}
+
+function importFromFile(file) {
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    let data;
+
+    try {
+      data = JSON.parse(String(reader.result));
+    } catch (error) {
+      showToast("Это не JSON-файл уровня.", "error");
+      return;
+    }
+
+    let candidate = Array.isArray(data) ? data[0] : data;
+
+    if (candidate && Array.isArray(candidate.levels)) {
+      candidate = candidate.levels[0];
+    }
+
+    const clean = sanitizeLevel(candidate);
+
+    if (!clean) {
+      showToast("В файле нет подходящей карты уровня.", "error");
+      return;
+    }
+
+    if (dirty && !confirm("Несохранённые изменения будут потеряны. Загрузить файл?")) {
+      return;
+    }
+
+    undoStack = [];
+    redoStack = [];
+
+    applyGrid(
+      clean.rows,
+      clean.name,
+      null,
+      true,
+      clean.biome || "grass"
+    );
+    importedSettings = sanitizeSettingsOverrides(candidate.settings);
+    loadSelect.value = "";
+
+    updateUndoButtons();
+    showToast(`Уровень «${clean.name}» загружен из файла.`, "success");
+  };
+
+  reader.onerror = () => {
+    showToast("Не удалось прочитать файл.", "error");
+  };
+
+  reader.readAsText(file);
+}
+
+// ============================================
+// ВСПЛЫВАЮЩЕЕ СООБЩЕНИЕ
+// ============================================
+
+function showToast(message, type) {
+  toastElement.textContent = message;
+  toastElement.className = "toast visible";
+
+  if (type) {
+    toastElement.classList.add(type);
+  }
+
+  clearTimeout(toastTimer);
+
+  toastTimer = setTimeout(() => {
+    toastElement.classList.remove("visible");
+  }, 3400);
+}
+
+// ============================================
+// КНОПКИ И ГОРЯЧИЕ КЛАВИШИ
+// ============================================
+
+document.getElementById("newBtn").addEventListener("click", () => {
+  resetToNewLevel(true);
+});
+
+document.getElementById("saveBtn").addEventListener("click", saveCurrentLevel);
+document.getElementById("testBtn").addEventListener("click", testCurrentLevel);
+document.getElementById("resizeBtn").addEventListener("click", applyResize);
+document.getElementById("loadBtn").addEventListener("click", loadSelectedLevel);
+document.getElementById("deleteBtn").addEventListener("click", deleteCurrentLevel);
+document.getElementById("exportBtn").addEventListener("click", exportCurrentLevel);
+document.getElementById("importBtn").addEventListener("click", () => importInput.click());
+
+importInput.addEventListener("change", () => {
+  const file = importInput.files && importInput.files[0];
+
+  if (file) {
+    importFromFile(file);
+  }
+
+  importInput.value = "";
+});
+
+levelNameInput.addEventListener("input", () => {
+  dirty = true;
+  scheduleDraftSave();
+});
+
+biomeSelect.addEventListener("change", () => {
+  levelBiome =
+    biomeSelect.value === "snow" || biomeSelect.value === "castle"
+      ? biomeSelect.value
+      : "grass";
+
+  dirty = true;
+  scheduleDraftSave();
+  showToast(
+    levelBiome === "snow"
+      ? "Выбран снежный биом."
+      : levelBiome === "castle"
+        ? "Выбран биом замка."
+        : "Выбран обычный биом.",
+    "success"
+  );
+});
+
+window.addEventListener("keydown", event => {
+  const tag = (event.target.tagName || "").toLowerCase();
+
+  if (tag === "input" || tag === "textarea" || tag === "select") {
+    return;
+  }
+
+  const ctrl = event.ctrlKey || event.metaKey;
+
+  if (ctrl && event.code === "KeyZ") {
+    event.preventDefault();
+
+    if (event.shiftKey) {
+      redo();
+    } else {
+      undo();
+    }
+
+    return;
+  }
+
+  if (ctrl && event.code === "KeyY") {
+    event.preventDefault();
+    redo();
+    return;
+  }
+
+  if (ctrl && event.code === "KeyS") {
+    event.preventDefault();
+    saveCurrentLevel();
+    return;
+  }
+
+  if (ctrl && event.code === "KeyC") {
+    event.preventDefault();
+    copySelection();
+    return;
+  }
+
+  if (ctrl && event.code === "KeyV") {
+    event.preventDefault();
+    enterPasteMode();
+    return;
+  }
+
+  if (ctrl && event.code === "KeyX") {
+    event.preventDefault();
+    cutSelection();
+    return;
+  }
+
+  if (event.code === "Escape") {
+    setTool("paint");
+    showToast("Выделение и режим вставки сброшены.");
+    return;
+  }
+
+  if (event.code === "Delete" || event.code === "Backspace") {
+    if (selection) {
+      event.preventDefault();
+      deleteSelection();
+    }
+
+    return;
+  }
+
+  if (event.code === "KeyB") {
+    setTool("paint");
+  }
+
+  if (event.code === "KeyE") {
+    setTool("erase");
+  }
+
+  if (event.code === "KeyR") {
+    setTool("rect");
+  }
+
+  if (event.code === "KeyS") {
+    setTool("select");
+  }
+});
+
+// Предупреждаем, если уходим со страницы с несохранённой картой
+window.addEventListener("beforeunload", event => {
+  if (!dirty) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = "";
+});
+
+// ============================================
+// ЗАПУСК
+// ============================================
+
+buildPalette();
+buildTemplateOptions();
+refreshLoadOptions();
+
+const restoredDraft = getEditorDraft();
+
+if (restoredDraft) {
+  undoStack = [];
+  redoStack = [];
+  applyGrid(
+    restoredDraft.rows,
+    restoredDraft.name,
+    restoredDraft.levelId,
+    true,
+    restoredDraft.biome || "grass"
+  );
+  loadSelect.value = "";
+  showToast(
+    "Черновик восстановлен. Не забудь сохранить уровень.",
+    "warn"
+  );
+} else {
+  resetToNewLevel(false, true);
+}
+
+updateUndoButtons();
+updateSelectionButtons();
+updateSelectionInfo();
+drawMiniMap();

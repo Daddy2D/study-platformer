@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Редактор уровней — Мини-платформер</title>
+  <link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <a class="back-link" href="index.html">← В игру</a>
+      <h1>Редактор уровней</h1>
+    </div>
+
+    <div class="top-actions">
+      <button id="newBtn" type="button">Новый</button>
+      <button id="saveBtn" type="button" class="primary">Сохранить</button>
+      <button id="testBtn" type="button" class="green">Проверить ▶</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="card">
+        <h2>Уровень</h2>
+
+        <label class="field">
+          <span>Название</span>
+          <input id="levelName" type="text" maxlength="40" placeholder="Мой уровень">
+        </label>
+
+        <label class="field">
+          <span>Биом</span>
+          <select id="biomeSelect">
+            <option value="grass">Обычный</option>
+            <option value="snow">Снежный</option>
+            <option value="castle">Замок</option>
+          </select>
+        </label>
+
+        <div class="size-row">
+          <label class="field">
+            <span>Ширина</span>
+            <input id="levelWidth" type="number" min="10" max="120" value="24">
+          </label>
+
+          <label class="field">
+            <span>Высота</span>
+            <input id="levelHeight" type="number" min="8" max="40" value="12">
+          </label>
+        </div>
+
+        <button id="resizeBtn" type="button" class="wide">Применить размер</button>
+      </section>
+
+      <section class="card">
+        <h2>Палитра</h2>
+        <div id="palette" class="palette"></div>
+        <p class="hint">
+          Выбери клетку и рисуй мышью. Правый клик стирает.
+          Кнопки «Отменить» и «Вернуть» помогают исправить ошибку.
+          Черновик сохраняется автоматически.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Выделение</h2>
+        <div class="button-row">
+          <button id="copyBtn" type="button" disabled>Копировать</button>
+          <button id="pasteBtn" type="button" disabled>Вставить</button>
+        </div>
+        <p class="hint">
+          Выбери инструмент «Выделение», обведи область мышью,
+          затем копируй и вставляй. Работают <b>Ctrl+C</b> и <b>Ctrl+V</b>.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Шаблоны</h2>
+        <select id="templateSelect" aria-label="Шаблон уровня"></select>
+        <button id="templateBtn" type="button" class="wide">Создать из шаблона</button>
+        <p class="hint">
+          Шаблон заменит текущую карту. Несохранённый черновик
+          останется в браузере.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Мини-карта</h2>
+        <canvas id="miniMap" width="240" height="140"></canvas>
+        <div class="button-row">
+          <button id="jumpStartBtn" type="button">К старту</button>
+          <button id="jumpFinishBtn" type="button">К финишу</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Загрузить</h2>
+
+        <select id="loadSelect" aria-label="Что загрузить"></select>
+
+        <div class="button-row">
+          <button id="loadBtn" type="button">Загрузить</button>
+          <button id="deleteBtn" type="button" class="danger" disabled>Удалить</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Файл</h2>
+
+        <div class="button-row">
+          <button id="exportBtn" type="button">Скачать JSON</button>
+          <button id="importBtn" type="button">Загрузить JSON</button>
+        </div>
+
+        <input id="importInput" type="file" accept=".json,application/json" hidden>
+
+        <p class="hint">
+          JSON можно передать другому ученику или сохранить как обычный файл.
+        </p>
+      </section>
+
+      <section class="card help">
+        <h2>Подсказки</h2>
+        <p><b>P</b> — старт, <b>X</b> — финиш. Без них уровень не проверить.</p>
+        <p><b>G</b> — земля. <b>S</b> — шипы, <b>C</b> — монета, <b>E</b> — враг.</p>
+        <p><b>K</b> — ключ, <b>D</b> — дверь. Дверь занимает 2 клетки вверх.
+          Сверху поставь <b>G</b>, чтобы её нельзя было перепрыгнуть.</p>
+        <p><b>M</b> и <b>V</b> — движущиеся платформы.</p>
+        <p><b>B</b> — батут, <b>L</b> — падающая платформа.</p>
+        <p><b>O</b> — платформа в одну сторону, <b>R</b> — разрушаемый блок,
+          <b>H</b> — лестница, <b>W</b> — пила, <b>N</b> — пушка.</p>
+        <p><b>Z</b> — босс. На уровне может быть только один босс.</p>
+        <p><b>Прямоугольник</b> заполняет область выбранной клеткой.
+          <b>Выделение</b> помогает копировать фрагменты.</p>
+        <p><b>Ctrl+C</b> — копировать, <b>Ctrl+V</b> — вставить,
+          <b>Esc</b> — отменить режим.</p>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="toolbar">
+        <div class="tools">
+          <button id="paintTool" type="button" class="tool active" data-tool="paint">Кисть</button>
+          <button id="eraseTool" type="button" class="tool" data-tool="erase">Ластик</button>
+          <button id="rectTool" type="button" class="tool" data-tool="rect">Прямоугольник</button>
+          <button id="selectTool" type="button" class="tool" data-tool="select">Выделение</button>
+        </div>
+
+        <div class="tools right">
+          <button id="undoBtn" type="button" disabled>Отменить</button>
+          <button id="redoBtn" type="button" disabled>Вернуть</button>
+        </div>
+      </div>
+
+      <div id="mapScroll" class="map-scroll">
+        <canvas id="mapCanvas" width="720" height="360"></canvas>
+      </div>
+
+      <footer class="map-footer">
+        <span id="position">Клетка: —</span>
+        <span id="selectionInfo"></span>
+        <span id="stats">24 × 12</span>
+        <span id="validation" class="ok">Проверка: всё хорошо</span>
+      </footer>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Настройки и готовые уровни нужны, чтобы загружать их в редактор -->
+  <script src="settings.js"></script>
+  <script src="levels/level1.js"></script>
+  <script src="levels/level2.js"></script>
+  <script src="levels/level3.js"></script>
+  <script src="levels/level4.js"></script>
+  <script src="levels/level5.js"></script>
+  <script src="levels/level6.js"></script>
+  <script src="levels/level7.js"></script>
+  <script src="levels/level8.js"></script>
+  <script src="levels/levels-list.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/editor.js"></script>
+</body>
+</html>

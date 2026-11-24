@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "name": "понятный уровень",
+  "rows": [
+    "..............VVVVV.....",
+    "...K.......VVVV...V.....",
+    "...K...M.VV.......V.....",
+    "...K...MVV........V.....",
+    "...K..VMVVVVVVVVVV......",
+    "...K.VVMVV....VVVVVV....",
+    "...KVV.MVVVVVVVVVVVVV...",
+    "...KVVVMMVVV..KKKKKKK...",
+    "...KKKKMMKKKKKSSSSSSSKKK",
+    "..PKKKKMKKKKKKKKKKKKKX..",
+    "GGGGGGGMGGGGGGGGGGGGGGGG",
+    "GGGGGGGMMGGGGGGGGGGGGGGG"
+  ],
+  "updatedAt": 1794564711930
+}

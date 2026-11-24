@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "name": "Максимальный 30Х30",
+  "biome": "castle",
+  "rows": [
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "G.G..........................G",
+    "G.D..........................G",
+    "GLGLLLLLLLLLLLLLLLOOOOOOOOOO.G",
+    "GLG...............OG.........G",
+    "GLG...............OG........GG",
+    "GLGC..............CG......G..G",
+    "GLGLLLLLLLLLLLLLLLLG....G....G",
+    "GLG................G..G......G",
+    "GLGSSSSSSSSSSSSSSSSGG.....Z.CG",
+    "GLGGGGGGGGGGGGGGGGGG....GGGGGG",
+    "GLGC..................GGG....G",
+    "GLGGGGOOOOGGGGGGGGGGGGG......G",
+    "GLGC.......E...........NG.N..G",
+    "GLGGGGGGGGGGGGGGGGGGGGGGG.G..G",
+    "G......................CKGG..G",
+    "G.GGG........GGGGGGGGGGGG....G",
+    "G...GGGGGGGGG..........G..GGGG",
+    "G.E...GGGKFG...........D...W.G",
+    "GGG.E...GGCG.GGG..W.....GG...G",
+    "G..GGG...G.G...GG........GG..G",
+    "G....GG..G.GL...GG..W.....GGOG",
+    "G......ECGE......GG..........G",
+    "G.GGGGGGGGGGGGGGGGG.....GGGVGG",
+    "GE..............CDXG...GK...CG",
+    "GGGGGGGGGGGGGGGGGGGGRRRGGGGGGG",
+    "GP...................C.......G",
+    "GGLLLLLLLLLLLLLLLLLLLLLLLLLLLG",
+    "GSSSSSSSSSSSSSSSSSSSSSSSSSSSSG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"
+  ],
+  "updatedAt": 1795168893974,
+  "settings": {
+    "gravity": 0.8,
+    "maxJumps": 3
+  }
+}

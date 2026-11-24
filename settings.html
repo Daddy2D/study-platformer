@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Настройки уровней — Мини-платформер</title>
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <a class="back-link" href="index.html">← В игру</a>
+      <h1>Настройки уровней</h1>
+    </div>
+
+    <div class="top-note">
+      Настройки сохраняются в этом браузере
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="card">
+        <h2>Уровень</h2>
+
+        <label class="field">
+          <span>Выбери уровень</span>
+          <select id="levelSelect" aria-label="Уровень для настройки"></select>
+        </label>
+
+        <p id="levelHint" class="hint">
+          Выбери готовый или свой уровень.
+        </p>
+
+        <button id="previewBtn" type="button" class="green wide">
+          Проверить в игре ▶
+        </button>
+      </section>
+
+      <section class="card">
+        <h2>Пресеты</h2>
+        <div id="presets" class="presets"></div>
+        <p class="hint">
+          Пресет заполнит поля. Чтобы применить его, нажми «Сохранить».
+        </p>
+      </section>
+
+      <section class="card help">
+        <h2>Подсказки</h2>
+        <p>Настройки действуют только на выбранный уровень.</p>
+        <p>Если игра уже открыта, нажми <b>R</b>, чтобы перезапустить уровень с новыми настройками.</p>
+        <p>«Сбросить к обычным» удаляет настройки уровня.</p>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="card">
+        <h2>Параметры уровня</h2>
+        <div id="settingsFields" class="settings-fields"></div>
+
+        <details class="advanced-panel">
+          <summary>Расширенные настройки</summary>
+          <p class="hint">
+            Стрелки, падающие платформы и босс. Для обычных уроков
+            эти параметры можно не трогать.
+          </p>
+          <div id="advancedFields" class="settings-fields"></div>
+        </details>
+
+        <div class="actions">
+          <button id="saveBtn" type="button" class="primary">Сохранить</button>
+          <button id="resetBtn" type="button">Сбросить к обычным</button>
+          <span id="status" class="status" role="status"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="settings.js"></script>
+  <script src="levels/level1.js"></script>
+  <script src="levels/level2.js"></script>
+  <script src="levels/level3.js"></script>
+  <script src="levels/level4.js"></script>
+  <script src="levels/level5.js"></script>
+  <script src="levels/level6.js"></script>
+  <script src="levels/level7.js"></script>
+  <script src="levels/level8.js"></script>
+  <script src="levels/levels-list.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/settings-page.js"></script>
+</body>
+</html>
