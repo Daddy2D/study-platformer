@@ -14,7 +14,7 @@ import {
   getCustomLevel,
   getTestLevel
 } from "../core/storage.js";
-import { LEVEL_NAMES } from "../data/levels/index.js";
+import { LEVEL_NAMES, LEVEL_META } from "../data/levels/index.js";
 import {
   BUILTIN_LEVELS,
   loadLevel,
@@ -58,6 +58,10 @@ import { drawGame } from "./render.js";
 let customLevelsCache = [];
 let customPage = 0;
 const CUSTOM_PAGE_SIZE = 4;
+
+// Готовые уровни и номер страницы
+let levelPage = 0;
+const LEVELS_PER_PAGE = 8;
 
 // ============================================
 // ЭКРАНЫ
@@ -110,12 +114,27 @@ function rebuildUi() {
 
   if (state.gameState === "levels") {
     state.uiTitle = "ВЫБЕРИ УРОВЕНЬ";
-    state.uiSubtitle = "Восемь готовых уровней игры";
+    state.uiSubtitle = `${LEVEL_NAMES.length} готовых уровней игры`;
     state.uiHint = "↑ ↓ ← → — выбор    Enter — играть    Esc — назад";
 
-    const specs = LEVEL_NAMES.map((name, index) => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(LEVEL_NAMES.length / LEVELS_PER_PAGE)
+    );
+
+    levelPage = clamp(levelPage, 0, totalPages - 1);
+
+    const pageStart = levelPage * LEVELS_PER_PAGE;
+    const pageNames = LEVEL_NAMES.slice(
+      pageStart,
+      pageStart + LEVELS_PER_PAGE
+    );
+
+    const specs = pageNames.map((name, offset) => {
+      const index = pageStart + offset;
       const record = getLevelProgress(index);
       const completed = Boolean(record && record.completed);
+      const meta = LEVEL_META[index] || { author: "", note: "" };
 
       return {
         action: "startLevel",
@@ -123,9 +142,21 @@ function rebuildUi() {
         label: `${index + 1}. ${name}${completed ? " " + getStarsText(record.stars) : ""}`,
         sub: completed
           ? `Лучшее: ${record.bestTimeFrames !== null ? formatTimeFrames(record.bestTimeFrames) : "—"} · жизни: ${record.bestLives}`
-          : "Ещё не пройден"
+          : "Ещё не пройден",
+        author: meta.author,
+        note: meta.note
       };
     });
+
+    if (totalPages > 1) {
+      specs.push({
+        action: "levelsPage",
+        label:
+          levelPage + 1 < totalPages
+            ? `Страница ${levelPage + 1} из ${totalPages}  →`
+            : `←  Страница ${levelPage + 1} из ${totalPages}`
+      });
+    }
 
     specs.push({ action: "back", label: "Назад" });
 
@@ -169,7 +200,9 @@ function rebuildUi() {
       action: "playCustom",
       levelId: level.id,
       label: level.name,
-      sub: `${level.rows[0].length} × ${level.rows.length}`
+      sub: `${level.rows[0].length} × ${level.rows.length}`,
+      author: level.author || "",
+      note: level.note || ""
     }));
 
     if (customLevelsCache.length === 0) {
@@ -288,6 +321,8 @@ function layoutLevelButtons(specs) {
     sub: spec.sub || "",
     levelIndex: spec.levelIndex,
     levelId: spec.levelId,
+    author: spec.author || "",
+    note: spec.note || "",
     rect: {
       x: left + (index % columns) * (width + gapX),
       y: top + Math.floor(index / columns) * (height + gapY),
@@ -348,7 +383,9 @@ function startSingleLevel(level, source, settingsKey) {
     rows: level.rows,
     settingsKey: settingsKey || null,
     biome: level.biome || "grass",
-    bossType: level.bossType || "default"
+    bossType: level.bossType || "default",
+    author: level.author || "",
+    note: level.note || ""
   }];
   state.levelSource = source;
   state.score = 0;
@@ -397,6 +434,7 @@ function activateButton(button) {
   }
 
   if (button.action === "levels") {
+    levelPage = 0;
     setState("levels");
     return;
   }
@@ -460,6 +498,18 @@ function activateButton(button) {
 
   if (button.action === "customPage") {
     customPage += 1;
+    state.uiIndex = 0;
+    rebuildUi();
+    return;
+  }
+
+  if (button.action === "levelsPage") {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(LEVEL_NAMES.length / LEVELS_PER_PAGE)
+    );
+
+    levelPage = levelPage + 1 < totalPages ? levelPage + 1 : 0;
     state.uiIndex = 0;
     rebuildUi();
     return;

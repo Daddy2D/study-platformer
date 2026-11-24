@@ -217,6 +217,7 @@ describe("validateLevelRows: предупреждения", () => {
   it("замечает дверь, которую можно перепрыгнуть", () => {
     const rows = [
       "..........",
+      "..........",
       ".P.DK..X..",
       "GGGGGGGGGG",
       "GGGGGGGGGG"
@@ -237,6 +238,19 @@ describe("validateLevelRows: предупреждения", () => {
     const warnings = validateLevelRows(safe).warnings;
 
     expect(has(warnings, /перепрыгнуть/i)).toBe(false);
+  });
+
+  it("предупреждает про дверь у верхней кромки: потолка над картой нет", () => {
+    const rows = [
+      ".P.DK..X..",
+      "GGGGGGGGGG",
+      "GGGGGGGGGG",
+      "GGGGGGGGGG"
+    ];
+
+    const warnings = validateLevelRows(rows).warnings;
+
+    expect(has(warnings, /перепрыгнуть/i)).toBe(true);
   });
 
   it("замечает двери друг на друге", () => {
