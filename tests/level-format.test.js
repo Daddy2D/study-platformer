@@ -240,7 +240,7 @@ describe("validateLevelRows: предупреждения", () => {
     expect(has(warnings, /перепрыгнуть/i)).toBe(false);
   });
 
-  it("не предупреждает про дверь у верхней кромки карты", () => {
+  it("предупреждает про дверь у верхней кромки: потолка над картой нет", () => {
     const rows = [
       ".P.DK..X..",
       "GGGGGGGGGG",
@@ -250,7 +250,7 @@ describe("validateLevelRows: предупреждения", () => {
 
     const warnings = validateLevelRows(rows).warnings;
 
-    expect(has(warnings, /перепрыгнуть/i)).toBe(false);
+    expect(has(warnings, /перепрыгнуть/i)).toBe(true);
   });
 
   it("замечает двери друг на друге", () => {

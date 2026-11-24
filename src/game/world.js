@@ -23,7 +23,8 @@ export const BUILTIN_LEVELS = LEVELS.map((rows, index) => ({
   biome: LEVEL_BIOMES[index] || "grass",
   bossType: LEVEL_BOSS_TYPES[index] || "default",
   author: (LEVEL_META[index] && LEVEL_META[index].author) || "",
-  note: (LEVEL_META[index] && LEVEL_META[index].note) || ""
+  note: (LEVEL_META[index] && LEVEL_META[index].note) || "",
+  settings: (LEVEL_META[index] && LEVEL_META[index].settings) || null
 }));
 
 // Какие уровни сейчас играются: встроенные или один свой
@@ -291,8 +292,16 @@ export function loadLevel(index) {
   }
 
   // У каждого уровня могут быть свои гравитация, скорость, жизни и т. д.
+  // Авторские настройки из реестра перекрываются настройками из браузера.
+  const levelDefaults = level.settings || null;
+  const userSettings = level.settingsKey
+    ? getLevelSettings(level.settingsKey)
+    : null;
+
   applySettingsOverrides(
-    level.settingsKey ? getLevelSettings(level.settingsKey) : null
+    levelDefaults || userSettings
+      ? { ...(levelDefaults || {}), ...(userSettings || {}) }
+      : null
   );
 
   state.currentBiome = level.biome || "grass";

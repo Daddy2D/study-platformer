@@ -32,7 +32,8 @@ export function isFinishReachable(rawRows) {
   const hasKey = rows.some(row => String(row).includes("K"));
   const doorBlocks = !hasKey;
 
-  // R ломается головой, поэтому путь через него возможен
+  // Что мешает пройти. Разрушаемый блок R ломается головой снизу,
+  // поэтому он не стена, если под ним есть свободная клетка.
   const blocks = (x, y) => {
     const char = tileAt(rows, x, y);
 
@@ -40,7 +41,22 @@ export function isFinishReachable(rawRows) {
       return true;
     }
 
-    return char === "D" && doorBlocks;
+    if (char === "D") {
+      return doorBlocks;
+    }
+
+    // Верхняя половина закрытой двери: символ D на клетку ниже
+    if (doorBlocks && tileAt(rows, x, y + 1) === "D") {
+      return true;
+    }
+
+    if (char === "R") {
+      const below = tileAt(rows, x, y + 1);
+
+      return below === "G" || below === "R" || (doorBlocks && below === "D");
+    }
+
+    return false;
   };
   const isLadder = (x, y) => tileAt(rows, x, y) === "H";
   const cellKey = (x, y) => `${x},${y}`;
@@ -127,12 +143,7 @@ export function isFinishReachable(rawRows) {
           continue;
         }
 
-        // Лестница и движущаяся платформа сами переносят игрока,
-        // поэтому коридор для них не проверяем.
-        const carried =
-          node.ladder || next.ladder || node.moving || next.moving;
-
-        if (!carried && !pathClear(rows, node, next, blocks)) {
+        if (!pathClear(rows, node, next, blocks)) {
           continue;
         }
 

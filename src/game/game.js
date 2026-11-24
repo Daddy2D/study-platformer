@@ -434,6 +434,7 @@ function activateButton(button) {
   }
 
   if (button.action === "levels") {
+    levelPage = 0;
     setState("levels");
     return;
   }
@@ -503,7 +504,12 @@ function activateButton(button) {
   }
 
   if (button.action === "levelsPage") {
-    levelPage += 1;
+    const totalPages = Math.max(
+      1,
+      Math.ceil(LEVEL_NAMES.length / LEVELS_PER_PAGE)
+    );
+
+    levelPage = levelPage + 1 < totalPages ? levelPage + 1 : 0;
     state.uiIndex = 0;
     rebuildUi();
     return;

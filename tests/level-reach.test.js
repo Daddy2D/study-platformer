@@ -138,6 +138,39 @@ describe("isFinishReachable", () => {
     expect(reachable(rows)).toBe(false);
   });
 
+  it("лестница за стеной не помогает", () => {
+    const rows = [
+      "GGGGGGGGGGG",
+      ".PGH.....X.",
+      "GGGGGGGGGGG"
+    ];
+
+    expect(reachable(rows)).toBe(false);
+  });
+
+  it("стена из разрушаемых блоков не проходима", () => {
+    const rows = [
+      ".....R......",
+      ".....R......",
+      ".....R......",
+      ".P...R....X.",
+      "GGGGGGGGGGGG"
+    ];
+
+    expect(reachable(rows)).toBe(false);
+  });
+
+  it("один разрушаемый блок с проходом снизу — проходим", () => {
+    const rows = [
+      "............",
+      ".....R......",
+      ".P........X.",
+      "GGGGGGGGGGGG"
+    ];
+
+    expect(reachable(rows)).toBe(true);
+  });
+
   it("дверь с ключом пропускает", () => {
     const rows = [
       ".....G..........",

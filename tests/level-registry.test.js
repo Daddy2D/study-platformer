@@ -7,14 +7,30 @@ import {
   LEVEL_META
 } from "../src/data/levels/index.js";
 import { validateLevelRows } from "../src/core/level-format.js";
-import { LEVEL_1 } from "../src/data/levels/level1.js";
-import { LEVEL_2 } from "../src/data/levels/level2.js";
-import { LEVEL_3 } from "../src/data/levels/level3.js";
-import { LEVEL_4 } from "../src/data/levels/level4.js";
-import { LEVEL_5 } from "../src/data/levels/level5.js";
-import { LEVEL_6 } from "../src/data/levels/level6.js";
-import { LEVEL_7 } from "../src/data/levels/level7.js";
-import { LEVEL_8 } from "../src/data/levels/level8.js";
+import { sanitizeSettingsOverrides } from "../src/core/settings.js";
+
+// Контрольные суммы карт 1–8: уровни менять нельзя
+const BUILTIN_FINGERPRINTS = [
+  1225108745,
+  1509693233,
+  732793567,
+  2926242694,
+  3449856026,
+  964337926,
+  1714922135,
+  1704112941
+];
+
+function fingerprint(rows) {
+  let hash = 2166136261;
+
+  for (const char of rows.join("\n")) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+
+  return hash;
+}
 
 // Полный набор символов совпадает с TILE_CHARS в src/core/level-format.js
 const ALLOWED = new Set("GPXCETSFMVKDBLORHWNZ".split(""));
@@ -51,6 +67,18 @@ describe("реестр готовых уровней", () => {
     }
   });
 
+  it("авторские настройки уровней проходят проверку значений", () => {
+    for (const [index, meta] of LEVEL_META.entries()) {
+      if (!meta.settings) {
+        continue;
+      }
+
+      const clean = sanitizeSettingsOverrides(meta.settings);
+
+      expect(clean, LEVEL_NAMES[index]).toEqual(meta.settings);
+    }
+  });
+
   it("держит одинаковую длину строк на каждом уровне", () => {
     for (const [index, rows] of LEVELS.entries()) {
       const width = rows[0].length;
@@ -80,19 +108,10 @@ describe("реестр готовых уровней", () => {
   });
 
   it("не меняет уровни 1–8", () => {
-    const original = [
-      LEVEL_1,
-      LEVEL_2,
-      LEVEL_3,
-      LEVEL_4,
-      LEVEL_5,
-      LEVEL_6,
-      LEVEL_7,
-      LEVEL_8
-    ];
-
     for (let index = 0; index < BUILTIN_COUNT; index++) {
-      expect(LEVELS[index], `уровень ${index + 1}`).toBe(original[index]);
+      expect(fingerprint(LEVELS[index]), `уровень ${index + 1}`).toBe(
+        BUILTIN_FINGERPRINTS[index]
+      );
     }
   });
 
@@ -105,13 +124,17 @@ describe("реестр готовых уровней", () => {
     expect(Math.abs(first - second)).toBeGreaterThan(1);
   });
 
-  it("проходит проверку без ошибок, а первые восемь — без предупреждений", () => {
+  it("проходит проверку: 1–15 без предупреждений, у 16 только шипы", () => {
     for (const [index, rows] of LEVELS.entries()) {
       const result = validateLevelRows(rows);
 
       expect(result.errors, LEVEL_NAMES[index]).toEqual([]);
 
-      if (index < BUILTIN_COUNT) {
+      if (index === 15) {
+        expect(result.warnings, LEVEL_NAMES[index]).toEqual([
+          "падающая платформа L стоит над шипами S — путь оборвётся"
+        ]);
+      } else {
         expect(result.warnings, LEVEL_NAMES[index]).toEqual([]);
       }
     }

@@ -239,18 +239,12 @@ export function validateLevelRows(rawRows) {
   }
 
   for (const door of doors) {
-    const aboveDoorY = door.y - 2;
-
-    // Дверь у самой кромки карты: сверху места нет, обойти нельзя
-    if (aboveDoorY < 0) {
-      continue;
-    }
-
-    const aboveDoor = tileAt(rows, door.x, aboveDoorY);
+    const aboveDoor = tileAt(rows, door.x, door.y - 2);
 
     // Над дверью должна быть именно земля: платформа или блок
-    // дают обход, а не стену. Финиш прямо над дверью — не обход.
-    if (aboveDoor !== "G" && aboveDoor !== "X") {
+    // дают обход, а не стену. Сверху карты потолка нет, поэтому
+    // дверь у самой кромки тоже можно обойти.
+    if (aboveDoor !== "G") {
       warnings.push("над дверью D нет земли — её можно перепрыгнуть");
       break;
     }

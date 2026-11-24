@@ -812,7 +812,16 @@ function drawSelectedLevelInfo() {
     return;
   }
 
-  const y = 462;
+  // Строку ставим под последней кнопкой, чтобы не наехать на неё
+  const lastBottom = state.uiButtons.reduce(
+    (max, item) => Math.max(max, item.rect.y + item.rect.h),
+    0
+  );
+
+  const y = Math.min(
+    canvas.height - 66,
+    Math.max(462, lastBottom + 16)
+  );
 
   if (author) {
     drawCenteredText(

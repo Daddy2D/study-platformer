@@ -66,11 +66,11 @@ describe("пак детских уровней", () => {
     expect(warnings.some(text => /висит в воздухе/i.test(text))).toBe(true);
   });
 
-  it("«Лёгкий» проходит проверку без предупреждений", () => {
+  it("находит перепрыгиваемую дверь у «Лёгкий» в исходном паке", () => {
     const item = loadPack().find(entry => entry.level.name === "Лёгкий");
     const warnings = validateLevelRows(item.level.rows).warnings;
 
-    expect(warnings).toEqual([]);
+    expect(warnings.some(text => /перепрыгнуть/i.test(text))).toBe(true);
   });
 
   it("находит столбик дверей у «МЯСОКОМБИНАТ»", () => {
