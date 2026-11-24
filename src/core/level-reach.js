@@ -17,6 +17,9 @@ const SPRING_DISTANCE = 6;
 const MAX_DISTANCE = 6;
 const LADDER_RADIUS = 2;
 
+// Платформы, которые могут висеть над ямой
+const FLOATING_PLATFORMS = new Set(["M", "V", "L", "O"]);
+
 export function isFinishReachable(rawRows) {
   if (!Array.isArray(rawRows) || rawRows.length === 0) {
     return { reachable: false, reason: "нет карты" };
@@ -49,10 +52,13 @@ export function isFinishReachable(rawRows) {
 
       const isStart = char === "P";
       const isFinish = char === "X";
+      // Платформы над ямой — тоже опора: на них можно стоять
+      const isFloatingPlatform = FLOATING_PLATFORMS.has(char);
 
       if (
         !hasSupportBelow(rows, x, y) &&
         !isLadder(x, y) &&
+        !isFloatingPlatform &&
         !isStart &&
         !isFinish
       ) {
@@ -144,11 +150,6 @@ function canMove(from, to, dx, dy) {
     return rise <= JUMP_RISE && distance <= JUMP_DISTANCE;
   }
 
-  // Вниз: падение с горизонтальным сносом
-  if (dy > 0) {
-    return distance <= Math.min(MAX_DISTANCE, 2 + dy);
-  }
-
-  // В одну сторону по ровной поверхности
+  // Вниз или по ровному: прыжок с падением или шаг
   return distance <= MAX_DISTANCE;
 }

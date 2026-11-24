@@ -102,6 +102,17 @@ describe("isFinishReachable", () => {
     expect(reachable(rows)).toBe(true);
   });
 
+  it("использует платформу над ямой", () => {
+    const rows = [
+      "......................",
+      ".P........M.........X.",
+      "GGGGGGGGG.......GGGGGG",
+      "GGGGGGGGG.......GGGGGG"
+    ];
+
+    expect(reachable(rows)).toBe(true);
+  });
+
   it("не находит финиш, висящий в воздухе далеко от платформ", () => {
     const rows = [
       "................",
