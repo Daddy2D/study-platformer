@@ -2,6 +2,9 @@
 
 Дата: 24.11.2026. Аудит по `START_PROMPT.md`, пункт 1. Код не менялся.
 
+Пути к файлам и номера строк — на момент аудита, до этапа 2. После перехода
+на Vite и ES-модули актуальная структура описана в `README.md`.
+
 Что прочитано полностью: `README.md`, `START_PROMPT.md`, `AGENTS.md`, `index.html`, `editor.html`, `settings.html`, `settings.js`, все `js/*.js`, все `levels/level1..8.js`, `levels/levels-list.js`, все 10 JSON из `Пак_уровней(20.11.26)/`, `css/` (по необходимости), `.gitignore`.
 
 ---
