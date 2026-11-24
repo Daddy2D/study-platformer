@@ -63,7 +63,7 @@ describe("пак детских уровней", () => {
     const item = loadPack().find(entry => entry.level.name === "парашутист");
     const warnings = validateLevelRows(item.level.rows).warnings;
 
-    expect(warnings.some(text => /финиш/i.test(text))).toBe(true);
+    expect(warnings.some(text => /висит в воздухе/i.test(text))).toBe(true);
   });
 
   it("находит перепрыгиваемую дверь у «Лёгкий»", () => {

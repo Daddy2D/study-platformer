@@ -113,8 +113,44 @@ describe("isFinishReachable", () => {
     expect(reachable(rows)).toBe(true);
   });
 
-  it("не находит финиш, висящий в воздухе далеко от платформ", () => {
+  it("не прыгает сквозь потолок", () => {
     const rows = [
+      "..........X.........",
+      "GGGGGGGGGGGGGGGGGGGG",
+      "....................",
+      ".P..................",
+      "GGGGGGGGGGGGGGGGGGGG",
+      "GGGGGGGGGGGGGGGGGGGG"
+    ];
+
+    expect(reachable(rows)).toBe(false);
+  });
+
+  it("закрытая дверь без ключа перекрывает путь", () => {
+    const rows = [
+      ".....G..........",
+      "................",
+      ".P...D.....X.....",
+      "GGGGGGGGGGGGGGGG",
+      "GGGGGGGGGGGGGGGG"
+    ];
+
+    expect(reachable(rows)).toBe(false);
+  });
+
+  it("дверь с ключом пропускает", () => {
+    const rows = [
+      ".....G..........",
+      "................",
+      ".P..KD.....X.....",
+      "GGGGGGGGGGGGGGGG",
+      "GGGGGGGGGGGGGGGG"
+    ];
+
+    expect(reachable(rows)).toBe(true);
+  });
+
+  it("не находит финиш, висящий в воздухе далеко от платформ", () => {    const rows = [
       "................",
       "..............X.",
       "................",

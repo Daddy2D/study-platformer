@@ -111,7 +111,11 @@ export function isFinishReachable(rawRows) {
 
         const next = nodes.get(cellKey(node.x + dx, node.y + dy));
 
-        if (!next || !canMove(node, next, dx, dy)) {
+        if (
+          !next ||
+          !canMove(node, next, dx, dy) ||
+          !pathClear(rows, node, next, doorBlocks)
+        ) {
           continue;
         }
 
@@ -153,3 +157,53 @@ function canMove(from, to, dx, dy) {
   // Вниз или по ровному: прыжок с падением или шаг
   return distance <= MAX_DISTANCE;
 }
+
+// Проверяем, что путь не проходит сквозь землю и блоки.
+// Прыжок вверх моделируем как «сначала вверх по своей колонке,
+// потом по горизонтали на высоте цели»; падение — наоборот.
+function pathClear(rows, from, to, doorBlocks) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const sx = Math.sign(dx);
+
+  if (dy < 0) {
+    for (let y = from.y - 1; y >= to.y; y--) {
+      if (isSolidAt(rows, from.x, y, doorBlocks)) {
+        return false;
+      }
+    }
+
+    for (let x = from.x + sx; x !== to.x + sx; x += sx) {
+      if (isSolidAt(rows, x, to.y, doorBlocks)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  if (dy > 0) {
+    for (let x = from.x + sx; x !== to.x + sx; x += sx) {
+      if (isSolidAt(rows, x, from.y, doorBlocks)) {
+        return false;
+      }
+    }
+
+    for (let y = from.y + 1; y <= to.y; y++) {
+      if (isSolidAt(rows, to.x, y, doorBlocks)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  for (let x = from.x + sx; x !== to.x + sx; x += sx) {
+    if (isSolidAt(rows, x, to.y, doorBlocks)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+

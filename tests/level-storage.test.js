@@ -24,7 +24,7 @@ describe("normalizeLevelRows", () => {
     ]);
   });
 
-  it("обрезает строки длиннее самой длинной допустимой", () => {
+  it("отклоняет карту шире допустимой", () => {
     const long = ".".repeat(MAX_LEVEL_WIDTH + 10);
 
     expect(normalizeLevelRows([long, long, long, long])).toBeNull();

@@ -116,7 +116,7 @@ describe("parseLevel", () => {
     expect(parseLevel({ rows: SIMPLE.slice(0, 2) }).errors.length).toBeGreaterThan(0);
   });
 
-  it("не ограничивает имя сорока символами молча", () => {
+  it("обрезает слишком длинное имя", () => {
     const { level } = parseLevel({ rows: SIMPLE, name: "я".repeat(60) });
 
     expect(level.name).toHaveLength(LEVEL_LIMITS.maxName);
@@ -176,7 +176,7 @@ describe("validateLevelRows: несколько финишей", () => {
     const result = validateLevelRows(rows);
 
     expect(result.errors).toEqual([]);
-    expect(has(result.warnings, /финиш/i)).toBe(true);
+    expect(has(result.warnings, /финишей несколько/i)).toBe(true);
   });
 });
 
@@ -258,7 +258,7 @@ describe("validateLevelRows: предупреждения", () => {
       "GGGGGGGGGG"
     ];
 
-    expect(has(validateLevelRows(rows).warnings, /босс/i)).toBe(true);
+    expect(has(validateLevelRows(rows).warnings, /под боссом/i)).toBe(true);
   });
 
   it("замечает финиш в воздухе", () => {
@@ -269,7 +269,7 @@ describe("validateLevelRows: предупреждения", () => {
       "GGGGGGGGGG"
     ];
 
-    expect(has(validateLevelRows(rows).warnings, /финиш/i)).toBe(true);
+    expect(has(validateLevelRows(rows).warnings, /висит в воздухе/i)).toBe(true);
   });
 
   it("замечает пилу, вкопанную в землю", () => {

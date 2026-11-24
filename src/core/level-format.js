@@ -6,7 +6,7 @@
 // чтобы проверки не расходились.
 
 import { isFinishReachable } from "./level-reach.js";
-import { hasSupportBelow, isSupportChar, tileAt } from "./level-tiles.js";
+import { hasSupportBelow, tileAt } from "./level-tiles.js";
 
 // Какие символы можно использовать в карте уровня
 export const TILE_CHARS = new Set([
@@ -241,7 +241,9 @@ export function validateLevelRows(rawRows) {
   for (const door of doors) {
     const aboveDoor = tileAt(rows, door.x, door.y - 2);
 
-    if (!isSupportChar(aboveDoor)) {
+    // Над дверью должна быть именно земля: платформа или блок
+    // дают обход, а не стену.
+    if (aboveDoor !== "G") {
       warnings.push("над дверью D нет земли — её можно перепрыгнуть");
       break;
     }

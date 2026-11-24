@@ -302,7 +302,7 @@ export function loadLevel(index) {
   // так видно, что не так в уровне, не блокируя запуск.
   const check = validateLevelRows(rows);
 
-  for (const problem of check.errors) {
+  for (const problem of [...check.errors, ...check.warnings]) {
     console.warn(`Уровень ${index + 1}: ${problem}`);
   }
 

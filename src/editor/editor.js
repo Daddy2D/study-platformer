@@ -136,6 +136,7 @@ let dirty = false;
 let importedSettings = null;
 let toastTimer = null;
 let draftTimer = null;
+let validationTimer = null;
 
 let selection = null;
 let selecting = false;
@@ -770,7 +771,7 @@ function paintAt(cell, char) {
   if (changed) {
     drawMap();
     updateStats();
-    updateValidation();
+    scheduleValidation();
   }
 }
 
@@ -799,6 +800,7 @@ function endStroke() {
     dirty = true;
     updateUndoButtons();
     scheduleDraftSave();
+    updateValidation();
     drawMiniMap();
   }
 
@@ -948,7 +950,7 @@ function applyRectFill() {
   if (changed) {
     drawMap();
     updateStats();
-    updateValidation();
+    scheduleValidation();
   }
 }
 
@@ -1256,13 +1258,7 @@ function gridRows() {
 }
 
 function validateLevel() {
-  const result = validateLevelRows(gridRows());
-
-  return {
-    errors: result.errors,
-    warnings: result.warnings,
-    counts: countLevelTiles(gridRows())
-  };
+  return validateLevelRows(gridRows());
 }
 
 function updateStats() {
@@ -1273,6 +1269,14 @@ function updateStats() {
     `${width} × ${grid.length}` +
     ` · монет: ${counts.C || 0}` +
     ` · врагов: ${(counts.E || 0) + (counts.T || 0)}`;
+}
+
+// При рисовании проверяем с задержкой: полная проверка
+// с достижимостью на каждую клетку тормозит большие карты.
+function scheduleValidation() {
+  clearTimeout(validationTimer);
+
+  validationTimer = setTimeout(updateValidation, 150);
 }
 
 function updateValidation() {
