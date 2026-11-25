@@ -1,3 +1,4 @@
+import { MAX_PACK_NAME } from "./level-pack.js";
 import {
   LEVEL_BIOMES,
   LEVEL_LIMITS,
@@ -73,6 +74,10 @@ export function sanitizeLevel(level) {
     biome: clean.biome,
     author: clean.author,
     note: clean.note,
+    pack: typeof level.pack === "string"
+      ? level.pack.trim().slice(0, MAX_PACK_NAME)
+      : "",
+    order: Number.isInteger(level.order) ? level.order : null,
     updatedAt: clean.updatedAt
   };
 }
@@ -235,6 +240,9 @@ export function saveEditorDraft(draft) {
     note: typeof draft.note === "string"
       ? draft.note.trim().slice(0, LEVEL_LIMITS.maxNote)
       : "",
+    pack: typeof draft.pack === "string"
+      ? draft.pack.trim().slice(0, MAX_PACK_NAME)
+      : "",
     rows: rows,
     biome: CUSTOM_LEVEL_BIOMES.includes(draft.biome)
       ? draft.biome
@@ -266,6 +274,9 @@ export function getEditorDraft() {
       : "",
     note: typeof raw.note === "string"
       ? raw.note.trim().slice(0, LEVEL_LIMITS.maxNote)
+      : "",
+    pack: typeof raw.pack === "string"
+      ? raw.pack.trim().slice(0, MAX_PACK_NAME)
       : "",
     rows: rows,
     biome: CUSTOM_LEVEL_BIOMES.includes(raw.biome)
