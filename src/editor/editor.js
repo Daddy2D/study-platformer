@@ -599,9 +599,9 @@ function applyTemplate() {
     null,
     true,
     template.biome || "grass",
-    "",
-    "",
-    ""
+    levelAuthor,
+    levelNote,
+    levelPack
   );
 
   loadSelect.value = "";
@@ -1674,6 +1674,12 @@ function saveCurrentLevel() {
 
   levelId = saved.id;
   levelNameInput.value = saved.name;
+  levelAuthor = saved.author;
+  levelNote = saved.note;
+  levelPack = saved.pack;
+  levelAuthorInput.value = saved.author;
+  levelNoteInput.value = saved.note;
+  levelPackInput.value = saved.pack;
   dirty = false;
 
   if (draftTimer) {

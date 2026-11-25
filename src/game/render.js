@@ -818,10 +818,7 @@ function drawSelectedLevelInfo() {
     0
   );
 
-  const y = Math.min(
-    canvas.height - 66,
-    Math.max(462, lastBottom + 16)
-  );
+  const y = Math.min(canvas.height - 60, lastBottom + 16);
 
   if (author) {
     drawCenteredText(

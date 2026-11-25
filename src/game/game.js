@@ -58,7 +58,7 @@ import { drawGame } from "./render.js";
 // Свои уровни в меню и номер страницы
 let customLevelsCache = [];
 let customPage = 0;
-const CUSTOM_PAGE_SIZE = 4;
+const CUSTOM_PAGE_SIZE = 3;
 
 // Готовые уровни и номер страницы
 let levelPage = 0;

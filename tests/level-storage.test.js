@@ -1,9 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_LEVEL_WIDTH,
+  getCustomLevel,
   normalizeLevelRows,
-  sanitizeLevel
+  sanitizeLevel,
+  saveCustomLevel
 } from "../src/core/storage.js";
+
+// В Node нет localStorage: подменяем на хранилище в памяти
+const memory = new Map();
+
+globalThis.localStorage = {
+  getItem: key => (memory.has(key) ? memory.get(key) : null),
+  setItem: (key, value) => {
+    memory.set(key, String(value));
+  },
+  removeItem: key => {
+    memory.delete(key);
+  }
+};
 
 const GOOD_ROWS = [
   "........",
@@ -122,5 +137,30 @@ describe("sanitizeLevel", () => {
   it("возвращает null для карты неверного формата", () => {
     expect(sanitizeLevel(null)).toBeNull();
     expect(sanitizeLevel({ rows: [".....", "..P..", "....X", "....."] })).toBeNull();
+  });
+});
+
+describe("сохранение своего уровня", () => {
+  it("сохраняет автора, описание и пак", () => {
+    const saved = saveCustomLevel({
+      name: "  Тест  ",
+      rows: GOOD_ROWS,
+      biome: "snow",
+      author: "  Влад  ",
+      note: "  батут  ",
+      pack: "  Работы детей  "
+    });
+
+    expect(saved.author).toBe("Влад");
+    expect(saved.note).toBe("батут");
+    expect(saved.pack).toBe("Работы детей");
+    expect(saved.name).toBe("Тест");
+
+    const restored = getCustomLevel(saved.id);
+
+    expect(restored).not.toBeNull();
+    expect(restored.author).toBe("Влад");
+    expect(restored.note).toBe("батут");
+    expect(restored.pack).toBe("Работы детей");
   });
 });

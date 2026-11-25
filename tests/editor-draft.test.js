@@ -72,6 +72,19 @@ describe("черновик редактора", () => {
     expect(draft.note).toHaveLength(80);
   });
 
+  it("сохраняет название пака", () => {
+    saveEditorDraft({
+      rows: GOOD_ROWS,
+      author: "Влад",
+      note: "описание",
+      pack: "  Работы детей  "
+    });
+
+    const draft = getEditorDraft();
+
+    expect(draft.pack).toBe("Работы детей");
+  });
+
   it("удаляется", () => {
     saveEditorDraft({ rows: GOOD_ROWS });
     clearEditorDraft();
