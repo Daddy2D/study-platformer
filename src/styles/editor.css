@@ -137,7 +137,7 @@ body {
   flex-direction: column;
   gap: 5px;
   margin-bottom: 10px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: bold;
   color: var(--muted);
   flex: 1;
@@ -146,8 +146,9 @@ body {
 .field input,
 select {
   width: 100%;
-  padding: 9px 10px;
+  padding: 10px 11px;
   font: inherit;
+  font-size: 15px;
   font-weight: normal;
   color: var(--text);
   background: #f9fbfe;
@@ -174,7 +175,8 @@ select {
 /* ---------- Кнопки ---------- */
 
 button {
-  padding: 9px 14px;
+  padding: 10px 14px;
+  min-height: 40px;
   font: inherit;
   font-weight: bold;
   color: var(--text);
@@ -244,7 +246,8 @@ button.wide {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 7px;
+  padding: 7px 8px;
+  min-height: 44px;
   text-align: left;
   font-size: 13px;
   font-weight: normal;
@@ -283,6 +286,19 @@ button.wide {
   font-size: 12px;
   line-height: 1.45;
   color: var(--muted);
+}
+
+/* Подсказка про выбранную клетку */
+.tile-hint {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  min-height: 40px;
+  border-radius: 8px;
+  background: #eef5ff;
+  border: 1px solid #cfe1f9;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
 }
 
 /* ---------- Рабочая область ---------- */

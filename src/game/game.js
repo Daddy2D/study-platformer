@@ -291,6 +291,8 @@ function layoutButtons(specs, top, width, height, gap) {
     sub: spec.sub || "",
     levelIndex: spec.levelIndex,
     levelId: spec.levelId,
+    author: spec.author || "",
+    note: spec.note || "",
     rect: {
       x: left,
       y: top + index * (buttonHeight + buttonGap),
