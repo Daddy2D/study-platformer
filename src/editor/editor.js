@@ -1,6 +1,6 @@
 import { LEVELS, LEVEL_NAMES, LEVEL_BIOMES } from "../data/levels/index.js";
 import { countTiles as countLevelTiles, validateLevelRows } from "../core/level-format.js";
-import { buildPack, parsePack } from "../core/level-pack.js";
+import { buildPack, parsePack, sortLevelsByPack } from "../core/level-pack.js";
 import { sanitizeSettingsOverrides } from "../core/settings.js";
 import {
   normalizeLevelRows,
@@ -124,6 +124,7 @@ let levelId = null;
 let levelBiome = "grass";
 let levelAuthor = "";
 let levelNote = "";
+let levelPack = "";
 let currentTool = "paint";
 let selectedTile = "G";
 
@@ -219,6 +220,7 @@ function scheduleDraftSave() {
       biome: levelBiome,
       author: levelAuthor,
       note: levelNote,
+      pack: levelPack,
       levelId: levelId
     });
   }, 500);
@@ -467,6 +469,7 @@ function applyTemplate() {
     null,
     true,
     template.biome || "grass",
+    "",
     "",
     ""
   );
@@ -1305,7 +1308,7 @@ function updateValidation() {
 // ЗАГРУЗКА, СОХРАНЕНИЕ, ТЕСТ
 // ============================================
 
-function applyGrid(rows, name, id, markDirty, biome, author, note) {
+function applyGrid(rows, name, id, markDirty, biome, author, note, pack) {
   const cleanRows = normalizeLevelRows(rows);
 
   if (!cleanRows) {
@@ -1321,6 +1324,7 @@ function applyGrid(rows, name, id, markDirty, biome, author, note) {
     : "grass";
   levelAuthor = typeof author === "string" ? author : "";
   levelNote = typeof note === "string" ? note : "";
+  levelPack = typeof pack === "string" ? pack : "";
   biomeSelect.value = levelBiome;
   importedSettings = null;
   levelNameInput.value = name || "Мой уровень";
@@ -1360,7 +1364,7 @@ function resetToNewLevel(askFirst, quiet) {
   levelId = null;
   clearEditorDraft();
 
-  applyGrid(rowsToStrings(template), "Мой уровень", null, false, "grass", "", "");
+  applyGrid(rowsToStrings(template), "Мой уровень", null, false, "grass", "", "", "");
 
   loadSelect.value = "";
   updateUndoButtons();
@@ -1406,7 +1410,7 @@ function refreshLoadOptions(selectedValue) {
     for (const level of customLevels) {
       const option = document.createElement("option");
       option.value = `custom:${level.id}`;
-      option.textContent = level.name;
+      option.textContent = level.pack ? `${level.pack} — ${level.name}` : level.name;
       customGroup.appendChild(option);
     }
   }
@@ -1454,6 +1458,7 @@ function loadSelectedLevel() {
       true,
       LEVEL_BIOMES[index] || "grass",
       "",
+      "",
       ""
     );
     showToast("Готовый уровень загружен. «Сохранить» создаст твою копию.");
@@ -1485,7 +1490,8 @@ function loadSelectedLevel() {
       false,
       level.biome || "grass",
       level.author,
-      level.note
+      level.note,
+      level.pack
     );
     showToast(`Загружен уровень «${level.name}».`);
   }
@@ -1509,7 +1515,8 @@ function saveCurrentLevel() {
     rows: rows,
     biome: levelBiome,
     author: levelAuthor,
-    note: levelNote
+    note: levelNote,
+    pack: levelPack
   });
 
   if (!saved) {
@@ -1558,7 +1565,7 @@ function testCurrentLevel() {
   const name = levelNameInput.value.trim() || "Проверка уровня";
   const rows = rowsToStrings(grid);
 
-  if (!saveTestLevel({ name: name, rows: rows, biome: levelBiome, author: levelAuthor, note: levelNote })) {
+  if (!saveTestLevel({ name: name, rows: rows, biome: levelBiome, author: levelAuthor, note: levelNote, pack: levelPack })) {
     showToast("Не удалось подготовить уровень к проверке.", "error");
     return;
   }
@@ -1598,7 +1605,8 @@ function undo() {
     true,
     levelBiome,
     levelAuthor,
-    levelNote
+    levelNote,
+    levelPack
   );
   showToast("Действие отменено");
 }
@@ -1619,7 +1627,8 @@ function redo() {
     true,
     levelBiome,
     levelAuthor,
-    levelNote
+    levelNote,
+    levelPack
   );
   showToast("Действие возвращено");
 }
@@ -1742,6 +1751,7 @@ function exportCurrentLevel() {
     biome: levelBiome,
     author: levelAuthor,
     note: levelNote,
+    pack: levelPack,
     rows: rowsToStrings(grid),
     updatedAt: Date.now()
   };
@@ -1773,10 +1783,14 @@ function exportCurrentLevel() {
 }
 
 function exportPack() {
-  const levels = getCustomLevels();
+  const levels = sortLevelsByPack(getCustomLevels());
 
   if (levels.length === 0) {
     showToast("Своих уровней пока нет — пак будет пустым.", "error");
+    return;
+  }
+
+  if (!confirm(`В пак попадут все свои уровни (${levels.length}). Скачать?`)) {
     return;
   }
 
@@ -1831,25 +1845,40 @@ function importFromFile(file) {
 
       if (!pack) {
         showToast(
-          "В файле нет подходящих уровней: " + errors.join("; "),
+          "В файле нет подходящих уровней. " + errors.join("; "),
           "error"
         );
         return;
       }
 
+      const existing = getCustomLevels();
       const saved = [];
+      let skipped = 0;
 
-      for (const item of pack.levels) {
+      for (const [index, item] of pack.levels.entries()) {
+        const duplicate = existing.some(
+          level =>
+            level.name === item.name &&
+            level.rows.join("\n") === item.rows.join("\n")
+        );
+
+        if (duplicate) {
+          skipped += 1;
+          continue;
+        }
+
         const level = saveCustomLevel({
           name: item.name,
           rows: item.rows,
           biome: item.biome,
           author: item.author,
           note: item.note,
-          pack: pack.name
+          pack: item.pack || pack.name,
+          order: Number.isInteger(item.order) ? item.order : index
         });
 
         if (!level) {
+          skipped += 1;
           continue;
         }
 
@@ -1861,7 +1890,11 @@ function importFromFile(file) {
       }
 
       if (saved.length === 0) {
-        showToast("Не удалось сохранить уровни пака.", "error");
+        showToast(
+          `Пак «${pack.name}» не добавлен: нет новых уровней. ` +
+            `Пропущено: ${skipped + errors.length}.`,
+          "warn"
+        );
         return;
       }
 
@@ -1876,13 +1909,20 @@ function importFromFile(file) {
         false,
         saved[0].biome || "grass",
         saved[0].author,
-        saved[0].note
+        saved[0].note,
+        saved[0].pack
       );
       loadSelect.value = `custom:${saved[0].id}`;
       updateUndoButtons();
+
+      const problems = skipped + errors.length;
+
       showToast(
-        `Пак «${pack.name}»: добавлено уровней — ${saved.length}.`,
-        "success"
+        `Пак «${pack.name}»: добавлено уровней — ${saved.length}` +
+          (problems > 0
+            ? `, пропущено ${problems} (уже есть или не читаются).`
+            : "."),
+        problems > 0 ? "warn" : "success"
       );
       return;
     }
@@ -1904,7 +1944,8 @@ function importFromFile(file) {
       true,
       clean.biome || "grass",
       clean.author,
-      clean.note
+      clean.note,
+      clean.pack
     );
     importedSettings = sanitizeSettingsOverrides(data && data.settings);
     loadSelect.value = "";
@@ -2102,7 +2143,8 @@ if (restoredDraft) {
     true,
     restoredDraft.biome || "grass",
     restoredDraft.author,
-    restoredDraft.note
+    restoredDraft.note,
+    restoredDraft.pack
   );
   loadSelect.value = "";
   showToast(

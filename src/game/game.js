@@ -15,7 +15,7 @@ import {
   getTestLevel
 } from "../core/storage.js";
 import { LEVEL_NAMES, LEVEL_META } from "../data/levels/index.js";
-import { sortLevelsByPack } from "../core/level-pack.js";
+import { paginateLevels, sortLevelsByPack } from "../core/level-pack.js";
 import {
   BUILTIN_LEVELS,
   loadLevel,
@@ -184,18 +184,12 @@ function rebuildUi() {
     state.uiSubtitle = "Сохранены в этом браузере";
     state.uiHint = "↑ ↓ — выбор    Enter — играть    Esc — назад";
 
-    const totalPages = Math.max(
-      1,
-      Math.ceil(customLevelsCache.length / CUSTOM_PAGE_SIZE)
-    );
+    const pages = paginateLevels(customLevelsCache, CUSTOM_PAGE_SIZE);
+    const totalPages = pages.length;
 
     customPage = clamp(customPage, 0, totalPages - 1);
 
-    const pageStart = customPage * CUSTOM_PAGE_SIZE;
-    const pageLevels = customLevelsCache.slice(
-      pageStart,
-      pageStart + CUSTOM_PAGE_SIZE
-    );
+    const pageLevels = pages[customPage] || [];
 
     const specs = pageLevels.map(level => ({
       action: "playCustom",
@@ -498,7 +492,9 @@ function activateButton(button) {
   }
 
   if (button.action === "customPage") {
-    customPage += 1;
+    const pages = paginateLevels(customLevelsCache, CUSTOM_PAGE_SIZE).length;
+
+    customPage = customPage + 1 < pages ? customPage + 1 : 0;
     state.uiIndex = 0;
     rebuildUi();
     return;
