@@ -58,7 +58,7 @@ import { drawGame } from "./render.js";
 // Свои уровни в меню и номер страницы
 let customLevelsCache = [];
 let customPage = 0;
-const CUSTOM_PAGE_SIZE = 4;
+const CUSTOM_PAGE_SIZE = 3;
 
 // Готовые уровни и номер страницы
 let levelPage = 0;
@@ -291,6 +291,8 @@ function layoutButtons(specs, top, width, height, gap) {
     sub: spec.sub || "",
     levelIndex: spec.levelIndex,
     levelId: spec.levelId,
+    author: spec.author || "",
+    note: spec.note || "",
     rect: {
       x: left,
       y: top + index * (buttonHeight + buttonGap),

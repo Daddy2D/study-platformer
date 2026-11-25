@@ -32,27 +32,153 @@ const MAX_UNDO = 80;
 
 // Описание всех клеток: цвет, буква и название для палитры
 const TILES = {
-  ".": { name: "Пусто", color: "#ffffff", letter: "", textColor: "#94a3b8" },
-  "G": { name: "Земля", color: "#a06a3b", letter: "G", textColor: "#ffffff" },
-  "P": { name: "Старт", color: "#2f80ed", letter: "P", textColor: "#ffffff" },
-  "X": { name: "Финиш", color: "#27ae60", letter: "X", textColor: "#ffffff" },
-  "C": { name: "Монета", color: "#ffd23d", letter: "C", textColor: "#7a5a00" },
-  "E": { name: "Враг", color: "#e74c3c", letter: "E", textColor: "#ffffff" },
-  "T": { name: "Стрелок", color: "#e67e22", letter: "T", textColor: "#ffffff" },
-  "S": { name: "Шипы", color: "#c0392b", letter: "S", textColor: "#ffffff" },
-  "F": { name: "Чекпоинт", color: "#16a085", letter: "F", textColor: "#ffffff" },
-  "M": { name: "Платформа →", color: "#8e44ad", letter: "M", textColor: "#ffffff" },
-  "V": { name: "Платформа ↑", color: "#6c5ce7", letter: "V", textColor: "#ffffff" },
-  "K": { name: "Ключ", color: "#f1c40f", letter: "K", textColor: "#6b5200" },
-  "D": { name: "Дверь", color: "#8b5a2b", letter: "D", textColor: "#ffffff" },
-  "B": { name: "Батут", color: "#e74c3c", letter: "B", textColor: "#ffffff" },
-  "L": { name: "Падающая", color: "#c08a4a", letter: "L", textColor: "#3f2a14" },
-  "O": { name: "Платформа 1-сторонняя", color: "#d9a441", letter: "O", textColor: "#4b2e12" },
-  "R": { name: "Разрушаемый блок", color: "#b8793f", letter: "R", textColor: "#ffffff" },
-  "H": { name: "Лестница", color: "#a06a3b", letter: "H", textColor: "#ffffff" },
-  "W": { name: "Пила", color: "#95a5a6", letter: "W", textColor: "#1f2937" },
-  "N": { name: "Пушка", color: "#6b7280", letter: "N", textColor: "#ffffff" },
-  "Z": { name: "Босс", color: "#7b2ff7", letter: "Z", textColor: "#ffffff" }
+  ".": {
+    name: "Пусто",
+    color: "#ffffff",
+    letter: "",
+    textColor: "#94a3b8",
+    hint: "Свободное место: здесь можно ходить, прыгать и падать."
+  },
+  "G": {
+    name: "Земля",
+    color: "#a06a3b",
+    letter: "G",
+    textColor: "#ffffff",
+    hint: "Твёрдая опора: на ней стоят и по ней ходят."
+  },
+  "P": {
+    name: "Старт",
+    color: "#2f80ed",
+    letter: "P",
+    textColor: "#ffffff",
+    hint: "Откуда начинает игрок. Нужен ровно один."
+  },
+  "X": {
+    name: "Финиш",
+    color: "#27ae60",
+    letter: "X",
+    textColor: "#ffffff",
+    hint: "Флаг, к которому нужно добраться. Без него уровень не пройти."
+  },
+  "C": {
+    name: "Монета",
+    color: "#ffd23d",
+    letter: "C",
+    textColor: "#7a5a00",
+    hint: "Собирается по пути и даёт очки."
+  },
+  "E": {
+    name: "Враг",
+    color: "#e74c3c",
+    letter: "E",
+    textColor: "#ffffff",
+    hint: "Ходит по платформе и ранит при касании."
+  },
+  "T": {
+    name: "Стрелок",
+    color: "#e67e22",
+    letter: "T",
+    textColor: "#ffffff",
+    hint: "Стоит на месте и стреляет, когда видит игрока."
+  },
+  "S": {
+    name: "Шипы",
+    color: "#c0392b",
+    letter: "S",
+    textColor: "#ffffff",
+    hint: "Ранит при касании. Ставь на землю."
+  },
+  "F": {
+    name: "Чекпоинт",
+    color: "#16a085",
+    letter: "F",
+    textColor: "#ffffff",
+    hint: "Сюда игрок вернётся после урона."
+  },
+  "M": {
+    name: "Платформа →",
+    color: "#8e44ad",
+    letter: "M",
+    textColor: "#ffffff",
+    hint: "Ездит влево и вправо и везёт игрока."
+  },
+  "V": {
+    name: "Платформа ↑",
+    color: "#6c5ce7",
+    letter: "V",
+    textColor: "#ffffff",
+    hint: "Ездит вверх и вниз и поднимает игрока."
+  },
+  "K": {
+    name: "Ключ",
+    color: "#f1c40f",
+    letter: "K",
+    textColor: "#6b5200",
+    hint: "Открывает одну дверь."
+  },
+  "D": {
+    name: "Дверь",
+    color: "#8b5a2b",
+    letter: "D",
+    textColor: "#ffffff",
+    hint: "Занимает две клетки вверх, открывается ключом."
+  },
+  "B": {
+    name: "Батут",
+    color: "#e74c3c",
+    letter: "B",
+    textColor: "#ffffff",
+    hint: "Высоко подбрасывает игрока. Ставь на землю."
+  },
+  "L": {
+    name: "Падающая",
+    color: "#c08a4a",
+    letter: "L",
+    textColor: "#3f2a14",
+    hint: "Дрожит, исчезает и появляется снова."
+  },
+  "O": {
+    name: "Платформа 1-сторонняя",
+    color: "#d9a441",
+    letter: "O",
+    textColor: "#4b2e12",
+    hint: "Сверху стоит, снизу и сбоку проходит насквозь."
+  },
+  "R": {
+    name: "Разрушаемый блок",
+    color: "#b8793f",
+    letter: "R",
+    textColor: "#ffffff",
+    hint: "Ломается от удара головой снизу."
+  },
+  "H": {
+    name: "Лестница",
+    color: "#a06a3b",
+    letter: "H",
+    textColor: "#ffffff",
+    hint: "По ней лазают вверх и вниз стрелками."
+  },
+  "W": {
+    name: "Пила",
+    color: "#95a5a6",
+    letter: "W",
+    textColor: "#1f2937",
+    hint: "Ездит и ранит при касании."
+  },
+  "N": {
+    name: "Пушка",
+    color: "#6b7280",
+    letter: "N",
+    textColor: "#ffffff",
+    hint: "Стреляет в игрока, когда он близко."
+  },
+  "Z": {
+    name: "Босс",
+    color: "#7b2ff7",
+    letter: "Z",
+    textColor: "#ffffff",
+    hint: "Побеждай прыжком на голову. На уровне только один."
+  }
 };
 
 const PALETTE_ORDER = [
@@ -89,6 +215,10 @@ const levelNameInput = document.getElementById("levelName");
 const levelWidthInput = document.getElementById("levelWidth");
 const levelHeightInput = document.getElementById("levelHeight");
 const biomeSelect = document.getElementById("biomeSelect");
+const levelAuthorInput = document.getElementById("levelAuthor");
+const levelNoteInput = document.getElementById("levelNote");
+const levelPackInput = document.getElementById("levelPack");
+const tileHintElement = document.getElementById("tileHint");
 
 const paletteElement = document.getElementById("palette");
 const paintTool = document.getElementById("paintTool");
@@ -469,9 +599,9 @@ function applyTemplate() {
     null,
     true,
     template.biome || "grass",
-    "",
-    "",
-    ""
+    levelAuthor,
+    levelNote,
+    levelPack
   );
 
   loadSelect.value = "";
@@ -1134,12 +1264,26 @@ function buildPalette() {
     button.addEventListener("click", () => {
       selectedTile = char;
       setTool("paint");
+      updateTileHint();
     });
 
     paletteElement.appendChild(button);
   }
 
   updatePaletteActive();
+  updateTileHint();
+}
+
+// Подсказка про выбранную клетку: название и что она делает.
+function updateTileHint() {
+  const info = TILES[selectedTile] || TILES["."];
+
+  if (!tileHintElement) {
+    return;
+  }
+
+  tileHintElement.textContent =
+    `${info.letter || "·"} — ${info.name}. ${info.hint}`;
 }
 
 function updatePaletteActive() {
@@ -1325,6 +1469,10 @@ function applyGrid(rows, name, id, markDirty, biome, author, note, pack) {
   levelAuthor = typeof author === "string" ? author : "";
   levelNote = typeof note === "string" ? note : "";
   levelPack = typeof pack === "string" ? pack : "";
+
+  levelAuthorInput.value = levelAuthor;
+  levelNoteInput.value = levelNote;
+  levelPackInput.value = levelPack;
   biomeSelect.value = levelBiome;
   importedSettings = null;
   levelNameInput.value = name || "Мой уровень";
@@ -1526,6 +1674,12 @@ function saveCurrentLevel() {
 
   levelId = saved.id;
   levelNameInput.value = saved.name;
+  levelAuthor = saved.author;
+  levelNote = saved.note;
+  levelPack = saved.pack;
+  levelAuthorInput.value = saved.author;
+  levelNoteInput.value = saved.note;
+  levelPackInput.value = saved.pack;
   dirty = false;
 
   if (draftTimer) {
@@ -1548,6 +1702,11 @@ function saveCurrentLevel() {
 
   if (result.warnings.length > 0) {
     showToast("Сохранено, но есть замечания: " + result.warnings.join("; "), "warn");
+  } else if (!saved.author) {
+    showToast(
+      `Уровень «${saved.name}» сохранён без автора: впиши ник, чтобы его увидели в списке.`,
+      "warn"
+    );
   } else {
     showToast(`Уровень «${saved.name}» сохранён.`, "success");
   }
@@ -2010,6 +2169,27 @@ importInput.addEventListener("change", () => {
 levelNameInput.addEventListener("input", () => {
   dirty = true;
   scheduleDraftSave();
+});
+
+// Автор, описание и пак живут в состоянии редактора и в черновике
+function bindMetaField(input, assign) {
+  input.addEventListener("input", () => {
+    assign(input.value);
+    dirty = true;
+    scheduleDraftSave();
+  });
+}
+
+bindMetaField(levelAuthorInput, value => {
+  levelAuthor = value;
+});
+
+bindMetaField(levelNoteInput, value => {
+  levelNote = value;
+});
+
+bindMetaField(levelPackInput, value => {
+  levelPack = value;
 });
 
 biomeSelect.addEventListener("change", () => {

@@ -38,6 +38,21 @@
           </select>
         </label>
 
+        <label class="field">
+          <span>Автор (ник)</span>
+          <input id="levelAuthor" type="text" maxlength="24" placeholder="Как тебя подписать">
+        </label>
+
+        <label class="field">
+          <span>Чем интересен</span>
+          <input id="levelNote" type="text" maxlength="80" placeholder="Одна короткая фраза">
+        </label>
+
+        <label class="field">
+          <span>Пак</span>
+          <input id="levelPack" type="text" maxlength="40" placeholder="Необязательно">
+        </label>
+
         <div class="size-row">
           <label class="field">
             <span>Ширина</span>
@@ -56,6 +71,7 @@
       <section class="card">
         <h2>Палитра</h2>
         <div id="palette" class="palette"></div>
+        <p id="tileHint" class="tile-hint" aria-live="polite"></p>
         <p class="hint">
           Выбери клетку и рисуй мышью. Правый клик стирает.
           Кнопки «Отменить» и «Вернуть» помогают исправить ошибку.
