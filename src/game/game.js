@@ -15,6 +15,7 @@ import {
   getTestLevel
 } from "../core/storage.js";
 import { LEVEL_NAMES, LEVEL_META } from "../data/levels/index.js";
+import { sortLevelsByPack } from "../core/level-pack.js";
 import {
   BUILTIN_LEVELS,
   loadLevel,
@@ -200,7 +201,7 @@ function rebuildUi() {
       action: "playCustom",
       levelId: level.id,
       label: level.name,
-      sub: `${level.rows[0].length} × ${level.rows.length}`,
+      sub: `${level.pack ? level.pack + " · " : ""}${level.rows[0].length} × ${level.rows.length}`,
       author: level.author || "",
       note: level.note || ""
     }));
@@ -333,7 +334,7 @@ function layoutLevelButtons(specs) {
 }
 
 function openCustomScreen() {
-  customLevelsCache = getCustomLevels();
+  customLevelsCache = sortLevelsByPack(getCustomLevels());
   customPage = 0;
   setState("custom");
 }

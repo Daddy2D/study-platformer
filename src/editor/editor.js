@@ -1,5 +1,6 @@
 import { LEVELS, LEVEL_NAMES, LEVEL_BIOMES } from "../data/levels/index.js";
 import { countTiles as countLevelTiles, validateLevelRows } from "../core/level-format.js";
+import { buildPack, parsePack } from "../core/level-pack.js";
 import { sanitizeSettingsOverrides } from "../core/settings.js";
 import {
   normalizeLevelRows,
@@ -1771,6 +1772,38 @@ function exportCurrentLevel() {
   showToast("Файл JSON скачан.", "success");
 }
 
+function exportPack() {
+  const levels = getCustomLevels();
+
+  if (levels.length === 0) {
+    showToast("Своих уровней пока нет — пак будет пустым.", "error");
+    return;
+  }
+
+  const entries = levels.map(level => ({
+    ...level,
+    settings: getLevelSettings(`custom:${level.id}`)
+  }));
+
+  const pack = buildPack(entries, "Мои уровни", "");
+  const blob = new Blob([JSON.stringify(pack, null, 2)], {
+    type: "application/json"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `${safeFileName(pack.name)}_pack.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  showToast(`Пак из ${entries.length} уровней скачан.`, "success");
+}
+
 function importFromFile(file) {
   const reader = new FileReader();
 
@@ -1784,20 +1817,80 @@ function importFromFile(file) {
       return;
     }
 
-    let candidate = Array.isArray(data) ? data[0] : data;
-
-    if (candidate && Array.isArray(candidate.levels)) {
-      candidate = candidate.levels[0];
-    }
-
-    const clean = sanitizeLevel(candidate);
-
-    if (!clean) {
-      showToast("В файле нет подходящей карты уровня.", "error");
+    if (dirty && !confirm("Несохранённые изменения будут потеряны. Загрузить файл?")) {
       return;
     }
 
-    if (dirty && !confirm("Несохранённые изменения будут потеряны. Загрузить файл?")) {
+    // Пак: { type: "pack", levels: [...] } или просто массив уровней
+    const isPack =
+      Array.isArray(data) ||
+      (data && Array.isArray(data.levels));
+
+    if (isPack) {
+      const { pack, errors } = parsePack(data);
+
+      if (!pack) {
+        showToast(
+          "В файле нет подходящих уровней: " + errors.join("; "),
+          "error"
+        );
+        return;
+      }
+
+      const saved = [];
+
+      for (const item of pack.levels) {
+        const level = saveCustomLevel({
+          name: item.name,
+          rows: item.rows,
+          biome: item.biome,
+          author: item.author,
+          note: item.note,
+          pack: pack.name
+        });
+
+        if (!level) {
+          continue;
+        }
+
+        if (item.settings) {
+          saveLevelSettings(`custom:${level.id}`, item.settings);
+        }
+
+        saved.push(level);
+      }
+
+      if (saved.length === 0) {
+        showToast("Не удалось сохранить уровни пака.", "error");
+        return;
+      }
+
+      undoStack = [];
+      redoStack = [];
+      refreshLoadOptions(`custom:${saved[0].id}`);
+
+      applyGrid(
+        saved[0].rows,
+        saved[0].name,
+        saved[0].id,
+        false,
+        saved[0].biome || "grass",
+        saved[0].author,
+        saved[0].note
+      );
+      loadSelect.value = `custom:${saved[0].id}`;
+      updateUndoButtons();
+      showToast(
+        `Пак «${pack.name}»: добавлено уровней — ${saved.length}.`,
+        "success"
+      );
+      return;
+    }
+
+    const clean = sanitizeLevel(data);
+
+    if (!clean) {
+      showToast("В файле нет подходящей карты уровня.", "error");
       return;
     }
 
@@ -1813,7 +1906,7 @@ function importFromFile(file) {
       clean.author,
       clean.note
     );
-    importedSettings = sanitizeSettingsOverrides(candidate.settings);
+    importedSettings = sanitizeSettingsOverrides(data && data.settings);
     loadSelect.value = "";
 
     updateUndoButtons();
@@ -1860,6 +1953,7 @@ document.getElementById("resizeBtn").addEventListener("click", applyResize);
 document.getElementById("loadBtn").addEventListener("click", loadSelectedLevel);
 document.getElementById("deleteBtn").addEventListener("click", deleteCurrentLevel);
 document.getElementById("exportBtn").addEventListener("click", exportCurrentLevel);
+document.getElementById("exportPackBtn").addEventListener("click", exportPack);
 document.getElementById("importBtn").addEventListener("click", () => importInput.click());
 
 importInput.addEventListener("change", () => {

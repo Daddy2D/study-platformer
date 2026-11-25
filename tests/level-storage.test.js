@@ -110,6 +110,13 @@ describe("sanitizeLevel", () => {
 
     expect(level.author).toBe("");
     expect(level.note).toBe("");
+    expect(level.pack).toBe("");
+  });
+
+  it("сохраняет название пака", () => {
+    const level = sanitizeLevel({ rows: GOOD_ROWS, pack: "  Работы детей  " });
+
+    expect(level.pack).toBe("Работы детей");
   });
 
   it("возвращает null для карты неверного формата", () => {

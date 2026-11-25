@@ -73,6 +73,9 @@ export function sanitizeLevel(level) {
     biome: clean.biome,
     author: clean.author,
     note: clean.note,
+    pack: typeof level.pack === "string"
+      ? level.pack.trim().slice(0, 40)
+      : "",
     updatedAt: clean.updatedAt
   };
 }
