@@ -17,6 +17,7 @@ export { normalizeLevelRows };
 
 export const STORAGE_KEYS = {
   customLevels: "platformer.customLevels.v1",
+  customResults: "platformer.customResults.v1",
   testLevel: "platformer.testLevel.v1",
   sound: "platformer.sound.v1",
   levelSettings: "platformer.levelSettings.v1",
@@ -133,9 +134,79 @@ export function deleteCustomLevel(id) {
 
   if (saved) {
     deleteLevelSettings(`custom:${id}`);
+    deleteCustomResult(id);
   }
 
   return saved;
+}
+
+// ============================================
+// РЕЗУЛЬТАТЫ СВОИХ УРОВНЕЙ
+// ============================================
+// Нужны для заданий урока: пройден ли свой уровень и за сколько.
+
+export function getCustomResults() {
+  const raw = readStorage(STORAGE_KEYS.customResults, {});
+
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return {};
+  }
+
+  const clean = {};
+
+  for (const [id, value] of Object.entries(raw)) {
+    if (!id || !value || typeof value !== "object") {
+      continue;
+    }
+
+    const frames = Number(value.bestTimeFrames);
+
+    clean[id] = {
+      completed: value.completed === true,
+      bestTimeFrames: Number.isFinite(frames)
+        ? Math.max(0, Math.floor(frames))
+        : null
+    };
+  }
+
+  return clean;
+}
+
+export function saveCustomResult(id, result) {
+  if (!id || !result) {
+    return false;
+  }
+
+  const all = getCustomResults();
+  const previous = all[id] || { completed: false, bestTimeFrames: null };
+  const frames = Number(result.frames);
+  const best = Number.isFinite(frames) ? Math.max(0, Math.floor(frames)) : null;
+  const keepPrevious =
+    previous.bestTimeFrames !== null &&
+    (best === null || previous.bestTimeFrames <= best);
+
+  all[id] = {
+    completed: true,
+    bestTimeFrames: keepPrevious ? previous.bestTimeFrames : best
+  };
+
+  return writeStorage(STORAGE_KEYS.customResults, all);
+}
+
+export function deleteCustomResult(id) {
+  if (!id) {
+    return false;
+  }
+
+  const all = getCustomResults();
+
+  if (all[id] === undefined) {
+    return true;
+  }
+
+  delete all[id];
+
+  return writeStorage(STORAGE_KEYS.customResults, all);
 }
 
 // Временный уровень для кнопки «Проверить» в редакторе.

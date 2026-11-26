@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_LEVEL_WIDTH,
+  deleteCustomLevel,
+  deleteCustomResult,
   getCustomLevel,
+  getCustomResults,
   normalizeLevelRows,
   sanitizeLevel,
-  saveCustomLevel
+  saveCustomLevel,
+  saveCustomResult
 } from "../src/core/storage.js";
 
 // В Node нет localStorage: подменяем на хранилище в памяти
@@ -162,5 +166,36 @@ describe("сохранение своего уровня", () => {
     expect(restored.author).toBe("Влад");
     expect(restored.note).toBe("батут");
     expect(restored.pack).toBe("Работы детей");
+  });
+});
+
+describe("результаты своих уровней", () => {
+  it("запоминает прохождение и лучшее время", () => {
+    saveCustomResult("lvl_1", { frames: 2000 });
+    saveCustomResult("lvl_1", { frames: 1500 });
+    saveCustomResult("lvl_1", { frames: 1700 });
+
+    expect(getCustomResults().lvl_1).toEqual({
+      completed: true,
+      bestTimeFrames: 1500
+    });
+  });
+
+  it("удаляет результат вместе с уровнем", () => {
+    const saved = saveCustomLevel({ name: "Тест", rows: GOOD_ROWS });
+
+    saveCustomResult(saved.id, { frames: 900 });
+    expect(getCustomResults()[saved.id]).toBeDefined();
+
+    deleteCustomLevel(saved.id);
+
+    expect(getCustomResults()[saved.id]).toBeUndefined();
+  });
+
+  it("умеет удалить результат отдельно", () => {
+    saveCustomResult("lvl_2", { frames: 100 });
+    deleteCustomResult("lvl_2");
+
+    expect(getCustomResults().lvl_2).toBeUndefined();
   });
 });

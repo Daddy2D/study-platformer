@@ -50,6 +50,7 @@ export const state = {
   currentLevelIndex: 0,
   currentBiome: "grass",
   currentBossType: "default",
+  currentLevelId: null,
   currentLevelAuthor: "",
   currentLevelNote: "",
   gameLevels: [],
