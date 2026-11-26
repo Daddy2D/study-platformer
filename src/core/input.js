@@ -153,3 +153,67 @@ window.addEventListener("blur", () => {
   state.mouseX = -1000;
   state.mouseY = -1000;
 });
+
+// ============================================
+// КНОПКИ ДЛЯ ТЕЛЕФОНА И ПЛАНШЕТА
+// ============================================
+
+const touchControls = document.getElementById("touchControls");
+
+function enableTouchMode() {
+  document.body.classList.add("touch");
+}
+
+if (touchControls) {
+  // На сенсорных устройствах кнопки показываются сразу
+  if (navigator.maxTouchPoints > 0) {
+    enableTouchMode();
+  }
+
+  window.addEventListener("touchstart", enableTouchMode, {
+    once: true,
+    passive: true
+  });
+
+  touchControls.addEventListener("contextmenu", event => {
+    event.preventDefault();
+  });
+
+  for (const button of touchControls.querySelectorAll("[data-key]")) {
+    const code = button.dataset.key;
+
+    const press = event => {
+      event.preventDefault();
+      initAudio();
+      keys[code] = true;
+    };
+
+    const release = event => {
+      event.preventDefault();
+      keys[code] = false;
+    };
+
+    button.addEventListener("pointerdown", press);
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("pointerleave", release);
+  }
+
+  const jumpButton = touchControls.querySelector('[data-action="jump"]');
+  const pauseButton = touchControls.querySelector('[data-action="pause"]');
+
+  if (jumpButton) {
+    jumpButton.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      initAudio();
+      state.jumpPressed = true;
+    });
+  }
+
+  if (pauseButton) {
+    pauseButton.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      state.pausePressed = true;
+    });
+  }
+}

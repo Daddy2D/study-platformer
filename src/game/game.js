@@ -89,7 +89,6 @@ function rebuildUi() {
     state.uiTitle = "МИНИ-ПЛАТФОРМЕР";
     state.uiSubtitle = "Играем и учимся делать уровни";
     state.uiHint = "↑ ↓ — выбор    Enter или клик — ОК    M — звук";
-    state.uiMessage = `Своих уровней: ${getCustomLevels().length}`;
 
     const overview = getProgressOverview();
     const primaryLabel =
@@ -98,6 +97,11 @@ function rebuildUi() {
         : overview.completed >= overview.totalLevels
           ? "Начать заново"
           : "Продолжить";
+
+    state.uiMessage =
+      `Своих уровней: ${getCustomLevels().length}` +
+      ` · пройдено: ${overview.completed}/${overview.totalLevels}` +
+      ` · ★ ${overview.stars}/${overview.maxStars}`;
 
     const specs = [
       { action: "play", label: primaryLabel },
@@ -115,7 +119,11 @@ function rebuildUi() {
 
   if (state.gameState === "levels") {
     state.uiTitle = "ВЫБЕРИ УРОВЕНЬ";
-    state.uiSubtitle = `${LEVEL_NAMES.length} готовых уровней игры`;
+
+    const overview = getProgressOverview();
+
+    state.uiSubtitle =
+      `${LEVEL_NAMES.length} уровней · пройдено ${overview.completed}/${overview.totalLevels} · ★ ${overview.stars}/${overview.maxStars}`;
     state.uiHint = "↑ ↓ ← → — выбор    Enter — играть    Esc — назад";
 
     const totalPages = Math.max(
@@ -447,22 +455,12 @@ function activateButton(button) {
   }
 
   if (button.action === "editor") {
-    const editorWindow = window.open("editor.html", "_blank");
-
-    if (!editorWindow) {
-      window.location.href = "editor.html";
-    }
-
+    window.location.href = "editor.html";
     return;
   }
 
   if (button.action === "settings") {
-    const settingsWindow = window.open("settings.html", "_blank");
-
-    if (!settingsWindow) {
-      window.location.href = "settings.html";
-    }
-
+    window.location.href = "settings.html";
     return;
   }
 
