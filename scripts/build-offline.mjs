@@ -92,6 +92,11 @@ async function main() {
     }
 
     const target = path.join(OUT_DIR, page.html);
+
+    if (page.html === "index.html" && !html.includes('id="touchControls"')) {
+      throw new Error("в index.html пропала разметка экранных кнопок");
+    }
+
     fs.writeFileSync(target, html, "utf8");
     report.push(`${page.html} — ${Math.round(html.length / 1024)} КБ`);
   }

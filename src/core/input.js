@@ -184,12 +184,14 @@ if (touchControls) {
 
     const press = event => {
       event.preventDefault();
+      event.stopPropagation();
       initAudio();
       keys[code] = true;
     };
 
     const release = event => {
       event.preventDefault();
+      event.stopPropagation();
       keys[code] = false;
     };
 
@@ -203,17 +205,60 @@ if (touchControls) {
   const pauseButton = touchControls.querySelector('[data-action="pause"]');
 
   if (jumpButton) {
+    // ▲ и прыгает, и работает как «вверх» на лестнице
     jumpButton.addEventListener("pointerdown", event => {
       event.preventDefault();
+      event.stopPropagation();
       initAudio();
+      keys.ArrowUp = true;
       state.jumpPressed = true;
     });
+
+    const stopJump = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      keys.ArrowUp = false;
+    };
+
+    jumpButton.addEventListener("pointerup", stopJump);
+    jumpButton.addEventListener("pointercancel", stopJump);
+    jumpButton.addEventListener("pointerleave", stopJump);
   }
 
   if (pauseButton) {
     pauseButton.addEventListener("pointerdown", event => {
       event.preventDefault();
+      event.stopPropagation();
       state.pausePressed = true;
     });
   }
 }
+
+// Если вкладку скрыли или приложение свернули, отпускаем все клавиши
+// и ставим игру на паузу: иначе игрок «убежит» при возврате.
+function suspendInput() {
+  for (const code in keys) {
+    keys[code] = false;
+  }
+
+  state.jumpPressed = false;
+  state.clickPressed = false;
+
+  if (
+    state.gameState === "playing" &&
+    !state.paused &&
+    !state.gameOver &&
+    !state.levelComplete &&
+    !state.gameFinished
+  ) {
+    state.paused = true;
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    suspendInput();
+  }
+});
+
+window.addEventListener("pagehide", suspendInput);

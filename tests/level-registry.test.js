@@ -7,6 +7,7 @@ import {
   LEVEL_META
 } from "../src/data/levels/index.js";
 import { validateLevelRows } from "../src/core/level-format.js";
+import { isFinishReachable } from "../src/core/level-reach.js";
 import { sanitizeSettingsOverrides } from "../src/core/settings.js";
 
 // Контрольные суммы карт 1–8: уровни менять нельзя
@@ -122,6 +123,15 @@ describe("реестр готовых уровней", () => {
     expect(first).toBeGreaterThanOrEqual(0);
     expect(second).toBeGreaterThanOrEqual(0);
     expect(Math.abs(first - second)).toBeGreaterThan(1);
+  });
+
+  it("финиш достижим на каждом уровне", () => {
+    for (const [index, rows] of LEVELS.entries()) {
+      expect(
+        isFinishReachable(rows).reachable,
+        LEVEL_NAMES[index]
+      ).toBe(true);
+    }
   });
 
   it("проходит проверку: 1–15 без предупреждений, у 16 только шипы", () => {

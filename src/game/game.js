@@ -85,6 +85,12 @@ function rebuildUi() {
   state.uiHint = "";
   state.uiMessage = "";
 
+  // Экранные кнопки нужны только в игре
+  document.body.classList.toggle(
+    "touch-game",
+    state.gameState === "playing"
+  );
+
   if (state.gameState === "menu") {
     state.uiTitle = "МИНИ-ПЛАТФОРМЕР";
     state.uiSubtitle = "Играем и учимся делать уровни";
@@ -100,7 +106,7 @@ function rebuildUi() {
 
     state.uiMessage =
       `Своих уровней: ${getCustomLevels().length}` +
-      ` · пройдено: ${overview.completed}/${overview.totalLevels}` +
+      ` · готовых: ${overview.completed}/${overview.totalLevels}` +
       ` · ★ ${overview.stars}/${overview.maxStars}`;
 
     const specs = [

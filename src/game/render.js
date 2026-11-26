@@ -2,7 +2,7 @@ import { TILE, SETTINGS } from "../core/settings.js";
 import { canvas, ctx } from "../core/canvas.js";
 import { IMAGES } from "../core/sprites.js";
 import { state } from "../core/state.js";
-import { clamp, solidAt } from "./collision.js";
+import { clamp } from "./collision.js";
 import { player } from "./player.js";
 import { drawParticles } from "../core/effects.js";
 import {
@@ -1211,11 +1211,18 @@ function drawWorld() {
     h: canvas.height + 128
   };
 
-  const inView = item =>
-    item.x + item.w > view.x &&
-    item.x < view.x + view.w &&
-    item.y + item.h > view.y &&
-    item.y < view.y + view.h;
+  const inView = item => {
+    // Подстраховка: объект без размеров считаем точкой и не теряем
+    const w = Number.isFinite(item.w) ? item.w : 1;
+    const h = Number.isFinite(item.h) ? item.h : 1;
+
+    return (
+      item.x + w > view.x &&
+      item.x < view.x + view.w &&
+      item.y + h > view.y &&
+      item.y < view.y + view.h
+    );
+  };
 
   if (state.currentBiome === "castle") {
     drawCastleBackground(camX, camY);
@@ -1245,8 +1252,8 @@ function drawWorld() {
 
   for (const solid of state.solids) {
     if (!inView(solid)) continue;
-    // Верхний слой земли — с травой, всё, что под ним, — просто земля
-    const covered = solidAt(solid.x + solid.w / 2, solid.y - 2);
+    // Верхний слой земли — с травой, остальной — просто земля
+    const covered = solid.covered;
 
     if (state.currentBiome === "snow") {
       if (covered) {
