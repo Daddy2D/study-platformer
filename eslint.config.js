@@ -33,6 +33,7 @@ export default [
       "vite.config.js",
       "vitest.config.js",
       "eslint.config.js",
+      "scripts/**/*.mjs",
       "tests/**/*.js"
     ],
     languageOptions: {
