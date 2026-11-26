@@ -175,10 +175,43 @@ describe("результаты своих уровней", () => {
     saveCustomResult("lvl_1", { frames: 1500 });
     saveCustomResult("lvl_1", { frames: 1700 });
 
-    expect(getCustomResults().lvl_1).toEqual({
-      completed: true,
-      bestTimeFrames: 1500
-    });
+    expect(getCustomResults().lvl_1.bestTimeFrames).toBe(1500);
+    expect(getCustomResults().lvl_1.completed).toBe(true);
+  });
+
+  it("не превращает пустое время в ноль", () => {
+    saveCustomResult("lvl_null", { frames: null });
+
+    expect(getCustomResults().lvl_null.bestTimeFrames).toBeNull();
+  });
+
+  it("запоминает победу над боссом", () => {
+    saveCustomResult("lvl_boss", { frames: 900, bossDefeated: true });
+    saveCustomResult("lvl_boss", { frames: 800 });
+
+    expect(getCustomResults().lvl_boss.bossDefeated).toBe(true);
+  });
+
+  it("сбрасывает результат, если карта изменилась", () => {
+    const saved = saveCustomLevel({ name: "Тест", rows: GOOD_ROWS });
+
+    saveCustomResult(saved.id, { frames: 900 });
+
+    const changed = GOOD_ROWS.slice();
+    changed[1] = ".P.C....X.";
+
+    saveCustomLevel({ id: saved.id, name: "Тест", rows: changed });
+
+    expect(getCustomResults()[saved.id]).toBeUndefined();
+  });
+
+  it("не сбрасывает результат, если карта та же", () => {
+    const saved = saveCustomLevel({ name: "Тест", rows: GOOD_ROWS });
+
+    saveCustomResult(saved.id, { frames: 900 });
+    saveCustomLevel({ id: saved.id, name: "Тест", rows: GOOD_ROWS });
+
+    expect(getCustomResults()[saved.id]).toBeDefined();
   });
 
   it("удаляет результат вместе с уровнем", () => {

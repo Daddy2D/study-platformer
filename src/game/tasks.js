@@ -1,16 +1,16 @@
 // ============================================
 // ЗАДАНИЯ УРОКА
 // ============================================
-// Каждое задание проверяется по сохранённым своим уровням
-// и результатам их прохождения. Задание выполнено, если
-// хотя бы один уровень подходит.
+// Каждое задание проверяется по своим уровням, созданным в этом
+// браузере, и результатам их прохождения. Импортированные паки
+// не считаются: задания — про то, что ребёнок сделал сам.
 
 export const TASKS = [
   {
     id: "first-level",
     title: "Первый уровень",
     hint: "Сохрани уровень со стартом и финишем",
-    check: () => true
+    check: level => hasTile(level, "P") && hasTile(level, "X")
   },
   {
     id: "spring",
@@ -28,7 +28,8 @@ export const TASKS = [
     id: "boss",
     title: "Уровень с боссом",
     hint: "Поставь босса Z и победи его",
-    check: level => hasTile(level, "Z")
+    check: (level, result) =>
+      hasTile(level, "Z") && Boolean(result && result.bossDefeated)
   },
   {
     id: "ladder",
@@ -39,8 +40,9 @@ export const TASKS = [
   {
     id: "no-enemies",
     title: "Без врагов",
-    hint: "Ни одного врага E или стрелка T",
-    check: level => !hasTile(level, "E") && !hasTile(level, "T")
+    hint: "Ни врагов E, ни стрелков T, ни босса Z",
+    check: level =>
+      !hasTile(level, "E") && !hasTile(level, "T") && !hasTile(level, "Z")
   },
   {
     id: "spikes",
@@ -69,11 +71,18 @@ function hasTile(level, char) {
   return level.rows.some(row => row.includes(char));
 }
 
+// Свои уровни — те, что созданы здесь, а не импортированы паками.
+export function isOwnLevel(level) {
+  return level.imported !== true;
+}
+
 // Возвращает задания с отметкой выполнения и уровнем,
 // который это задание закрыл.
 export function getTaskProgress(levels, results) {
+  const own = levels.filter(isOwnLevel);
+
   return TASKS.map(task => {
-    for (const level of levels) {
+    for (const level of own) {
       const result = (results && results[level.id]) || null;
 
       if (task.check(level, result)) {

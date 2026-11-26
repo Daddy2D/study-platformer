@@ -704,7 +704,8 @@ function completeLevel() {
   // Свой уровень: запоминаем прохождение для заданий урока
   if (state.levelSource === "custom" && state.currentLevelId) {
     saveCustomResult(state.currentLevelId, {
-      frames: state.levelTimerFrames
+      frames: state.levelTimerFrames,
+      bossDefeated: state.bossDefeated
     });
   }
 

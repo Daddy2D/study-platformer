@@ -60,17 +60,51 @@ describe("задания урока", () => {
   it("босс, лестница и шипы", () => {
     const tasks = getTaskProgress([makeLevel("lvl_1", withTiles("ZHS"))], {});
 
-    expect(status(tasks, "boss").done).toBe(true);
     expect(status(tasks, "ladder").done).toBe(true);
     expect(status(tasks, "spikes").done).toBe(true);
   });
 
-  it("без врагов не закрывается, если есть E или T", () => {
+  it("босс закрывает задание только после победы", () => {
+    const level = makeLevel("lvl_1", withTiles("Z"));
+
+    expect(status(getTaskProgress([level], {}), "boss").done).toBe(false);
+
+    const won = getTaskProgress([level], {
+      lvl_1: { completed: true, bossDefeated: true, bestTimeFrames: 600 }
+    });
+
+    expect(status(won, "boss").done).toBe(true);
+  });
+
+  it("без врагов не закрывается, если есть E, T или босс", () => {
     const clean = getTaskProgress([makeLevel("lvl_1")], {});
     const enemy = getTaskProgress([makeLevel("lvl_2", withTiles("E"))], {});
+    const shooter = getTaskProgress([makeLevel("lvl_3", withTiles("T"))], {});
+    const boss = getTaskProgress([makeLevel("lvl_4", withTiles("Z"))], {});
 
     expect(status(clean, "no-enemies").done).toBe(true);
     expect(status(enemy, "no-enemies").done).toBe(false);
+    expect(status(shooter, "no-enemies").done).toBe(false);
+    expect(status(boss, "no-enemies").done).toBe(false);
+  });
+
+  it("импортированные паки не закрывают задания", () => {
+    const imported = { ...makeLevel("lvl_1", withTiles("B")), imported: true };
+    const own = makeLevel("lvl_2", withTiles("B"));
+
+    expect(status(getTaskProgress([imported], {}), "spring").done).toBe(false);
+    expect(status(getTaskProgress([own], {}), "spring").done).toBe(true);
+  });
+
+  it("первый уровень требует старт и финиш", () => {
+    const broken = makeLevel("lvl_1", [
+      "..........",
+      ".P........",
+      "GGGGGGGGGG",
+      "GGGGGGGGGG"
+    ]);
+
+    expect(status(getTaskProgress([broken], {}), "first-level").done).toBe(false);
   });
 
   it("прохождение и время берутся из результатов", () => {

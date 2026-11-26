@@ -79,6 +79,7 @@ export function sanitizeLevel(level) {
       ? level.pack.trim().slice(0, MAX_PACK_NAME)
       : "",
     order: Number.isInteger(level.order) ? level.order : null,
+    imported: level.imported === true,
     updatedAt: clean.updatedAt
   };
 }
@@ -112,6 +113,14 @@ export function saveCustomLevel(level) {
 
   const levels = getCustomLevels();
   const existingIndex = levels.findIndex(item => item.id === clean.id);
+
+  // Если карта изменилась, старый результат прохождения больше не действует
+  if (
+    existingIndex >= 0 &&
+    levels[existingIndex].rows.join("\n") !== clean.rows.join("\n")
+  ) {
+    deleteCustomResult(clean.id);
+  }
 
   clean.updatedAt = Date.now();
 
@@ -159,13 +168,16 @@ export function getCustomResults() {
       continue;
     }
 
-    const frames = Number(value.bestTimeFrames);
+    const rawTime = value.bestTimeFrames;
+    const frames =
+      rawTime === null || rawTime === undefined ? null : Number(rawTime);
 
     clean[id] = {
       completed: value.completed === true,
       bestTimeFrames: Number.isFinite(frames)
         ? Math.max(0, Math.floor(frames))
-        : null
+        : null,
+      bossDefeated: value.bossDefeated === true
     };
   }
 
@@ -178,8 +190,15 @@ export function saveCustomResult(id, result) {
   }
 
   const all = getCustomResults();
-  const previous = all[id] || { completed: false, bestTimeFrames: null };
-  const frames = Number(result.frames);
+  const previous = all[id] || {
+    completed: false,
+    bestTimeFrames: null,
+    bossDefeated: false
+  };
+
+  const rawTime = result.frames;
+  const frames =
+    rawTime === null || rawTime === undefined ? null : Number(rawTime);
   const best = Number.isFinite(frames) ? Math.max(0, Math.floor(frames)) : null;
   const keepPrevious =
     previous.bestTimeFrames !== null &&
@@ -187,7 +206,8 @@ export function saveCustomResult(id, result) {
 
   all[id] = {
     completed: true,
-    bestTimeFrames: keepPrevious ? previous.bestTimeFrames : best
+    bestTimeFrames: keepPrevious ? previous.bestTimeFrames : best,
+    bossDefeated: previous.bossDefeated === true || result.bossDefeated === true
   };
 
   return writeStorage(STORAGE_KEYS.customResults, all);

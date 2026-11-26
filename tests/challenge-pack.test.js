@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validateLevelRows } from "../src/core/level-format.js";
 import { isFinishReachable } from "../src/core/level-reach.js";
 
-const PACK_FILE = "packs/Испытания.json";
+const PACK_FILE = "public/packs/Испытания.json";
 const pack = JSON.parse(fs.readFileSync(PACK_FILE, "utf8"));
 
 describe("пак «Испытания»", () => {
@@ -27,21 +27,53 @@ describe("пак «Испытания»", () => {
     });
   });
 
-  it("каждый уровень без ошибок и с достижимым финишем", () => {
+  it("каждый уровень без ошибок, предупреждений и с достижимым финишем", () => {
     pack.levels.forEach(level => {
       const check = validateLevelRows(level.rows);
 
       expect(check.errors, level.name).toEqual([]);
+      expect(check.warnings, level.name).toEqual([]);
       expect(isFinishReachable(level.rows).reachable, level.name).toBe(true);
     });
   });
 
-  it("сложность растёт: в конце есть боссы и пилы", () => {
-    const last = pack.levels[49];
-    const first = pack.levels[0];
+  it("имена не длиннее лимита сорока символов", () => {
+    pack.levels.forEach(level => {
+      expect(level.name.length, level.name).toBeLessThanOrEqual(40);
+    });
+  });
 
-    expect(last.rows.join("")).toContain("Z");
-    expect(first.rows.join("")).not.toContain("Z");
-    expect(last.rows.join("")).toContain("W");
+  it("названия соответствуют содержимому карт", () => {
+    for (const level of pack.levels) {
+      const map = level.rows.join("");
+
+      if (level.name.includes("Пилы")) expect(map, level.name).toContain("W");
+      if (level.name.includes("Пушки")) expect(map, level.name).toContain("N");
+      if (level.name.includes("Стрелки")) expect(map, level.name).toContain("T");
+      if (level.name.includes("Лестницы")) expect(map, level.name).toContain("H");
+      if (level.name.includes("Батуты")) expect(map, level.name).toContain("B");
+      if (level.name.includes("Падающие")) expect(map, level.name).toContain("L");
+      if (level.name.includes("Шипы")) expect(map, level.name).toContain("S");
+      if (level.name.includes("Подъёмник")) expect(map, level.name).toMatch(/[MV]/);
+      if (level.name.includes("Босс")) expect(map, level.name).toContain("Z");
+
+      if (level.name.includes("Ключ и дверь")) {
+        expect(map, level.name).toContain("K");
+        expect(map, level.name).toContain("D");
+      }
+    }
+  });
+
+  it("охватывает все механики, а в финале есть пушки и падающие", () => {
+    const all = pack.levels.map(level => level.rows.join("")).join("");
+    const lastTen = pack.levels.slice(40).map(level => level.rows.join("")).join("");
+
+    for (const char of ["B", "K", "D", "Z", "H", "S", "W", "N", "T", "L", "M", "O"]) {
+      expect(all, char).toContain(char);
+    }
+
+    expect(lastTen, "пушки").toContain("N");
+    expect(lastTen, "падающие").toContain("L");
+    expect(pack.levels[49].rows.join("")).toContain("Z");
   });
 });
