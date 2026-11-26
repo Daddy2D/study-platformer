@@ -102,14 +102,14 @@ async function main() {
   }
 
   // Пак испытаний кладём рядом: его импортируют через редактор
-  if (fs.existsSync("packs")) {
-    for (const name of fs.readdirSync("packs")) {
+  if (fs.existsSync(path.join("public", "packs"))) {
+    for (const name of fs.readdirSync(path.join("public", "packs"))) {
       if (!name.endsWith(".json")) {
         continue;
       }
 
       fs.copyFileSync(
-        path.join("packs", name),
+        path.join("public", "packs", name),
         path.join(OUT_DIR, name)
       );
       report.push(`${name} — пак уровней`);

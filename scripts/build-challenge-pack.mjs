@@ -13,70 +13,7 @@ import { isFinishReachable } from "../src/core/level-reach.js";
 
 const SEED = 20261126;
 const PACK_NAME = "Испытания";
-const OUT_FILE = path.join("packs", "Испытания.json");
-
-const TIER_NAMES = [
-  [
-    "Разминка",
-    "Первый прыжок",
-    "Шипастый шаг",
-    "Вниз и вверх",
-    "Стрелки",
-    "Лестница",
-    "Пилы",
-    "Пушки",
-    "Ключи",
-    "Первый босс"
-  ],
-  [
-    "Снежный старт",
-    "Гололёд",
-    "Вьюга",
-    "Ледяные шипы",
-    "Снежные стрелки",
-    "Лестница в гору",
-    "Пилы на льду",
-    "Пушки в снегу",
-    "Две двери",
-    "Ледяной страж"
-  ],
-  [
-    "Каменный вход",
-    "Своды",
-    "Шипастый зал",
-    "Арбалеты",
-    "Винтовая лестница",
-    "Пилы в стене",
-    "Пушечный зал",
-    "Связка ключей",
-    "Ловушка",
-    "Каменный страж"
-  ],
-  [
-    "Тёмный коридор",
-    "Обрыв",
-    "Шипы над пропастью",
-    "Перекрёстный огонь",
-    "Высокая башня",
-    "Пильная мастерская",
-    "Батарея",
-    "Три двери",
-    "Падающий мост",
-    "Дозорный босс"
-  ],
-  [
-    "Финальная разминка",
-    "Последний рывок",
-    "Шипы и пилы",
-    "Снайперы",
-    "Вертикаль",
-    "Ловушка на ловушке",
-    "Пушки и пилы",
-    "Ключи и босс",
-    "Почти финал",
-    "Испытание боссом"
-  ]
-];
+const OUT_FILE = path.join("public", "packs", "Испытания.json");
 
 const TIER_NOTES = [
   "Разминка: прыжки, монеты и первые шипы.",
@@ -85,6 +22,8 @@ const TIER_NOTES = [
   "Сложнее: узкие прыжки и перекрёстный огонь.",
   "Финальные испытания: всё сразу."
 ];
+
+const TIER_WORDS = ["разминка", "лёгкое", "среднее", "сложное", "финал"];
 
 function mulberry32(seed) {
   let value = seed >>> 0;
@@ -164,8 +103,16 @@ function buildLevel(n, random) {
           set(x + i, floorTop - 1, "C");
         }
 
-        if (gap >= 4 && random() < 0.5) {
+        const bridge = random();
+
+        if (gap >= 4 && bridge < 0.35) {
           set(x + 1, floorTop, "O");
+        } else if (tier >= 1 && gap >= 3 && bridge < 0.6) {
+          for (let i = 1; i < gap - 1; i++) {
+            set(x + i, floorTop, "L");
+          }
+        } else if (tier >= 2 && gap >= 4 && bridge < 0.8) {
+          set(x + 1, floorTop, "M");
         }
 
         x += gap + 2;
@@ -198,7 +145,7 @@ function buildLevel(n, random) {
     }
 
     // Пила на земле (со среднего уровня)
-    if (tier >= 1 && roll < 0.66 + tier * 0.03) {
+    if (tier >= 1 && roll < 0.64 + tier * 0.02) {
       if (get(x, floorTop) === "." && get(x + 1, floorTop) === ".") {
         set(x, floorTop, "W");
         x += 3;
@@ -207,7 +154,7 @@ function buildLevel(n, random) {
     }
 
     // Пушка (со второго уровня пака)
-    if (tier >= 2 && roll < 0.74) {
+    if (tier >= 2 && roll < 0.70 + tier * 0.03) {
       if (get(x, floorTop) === ".") {
         set(x, floorTop, "N");
         x += 3;
@@ -216,7 +163,7 @@ function buildLevel(n, random) {
     }
 
     // Лестница вверх с монетами
-    if (roll < 0.82) {
+    if (roll < 0.86) {
       if (get(x, floorTop) === ".") {
         for (let i = 0; i < 5; i++) {
           set(x, floorTop - i, "H");
@@ -229,7 +176,7 @@ function buildLevel(n, random) {
     }
 
     // Враг
-    if (roll < 0.9) {
+    if (roll < 0.93) {
       if (get(x, floorTop) === ".") {
         set(x, floorTop, "E");
         x += 2;
@@ -266,6 +213,20 @@ function buildLevel(n, random) {
         continue;
       }
 
+      // Стена над дверью высокая: двойным прыжком не перепрыгнуть
+      const wallTop = floorTop - 6;
+      let wallFree = wallTop > 0;
+
+      for (let y = floorTop - 2; y >= wallTop; y--) {
+        if (get(doorX, y) !== ".") {
+          wallFree = false;
+        }
+      }
+
+      if (!wallFree) {
+        continue;
+      }
+
       const keyX = doorX - 6 - Math.floor(random() * 4);
 
       const keyPlaced =
@@ -279,7 +240,11 @@ function buildLevel(n, random) {
 
       set(keyX, floorTop, "K");
       set(doorX, floorTop, "D");
-      set(doorX, floorTop - 2, "G");
+
+      for (let y = floorTop - 2; y >= wallTop; y--) {
+        set(doorX, y, "G");
+      }
+
       break;
     }
   }
@@ -335,11 +300,36 @@ function fallbackLevel() {
   return rows;
 }
 
-function nameFor(n) {
+function nameFor(n, rows) {
+  const number = String(n).padStart(2, "0");
   const tier = Math.min(4, Math.floor((n - 1) / 10));
-  const index = (n - 1) % 10;
+  const count = char => rows.join("").split(char).length - 1;
+  const suffix = " · " + TIER_WORDS[tier];
 
-  return `Испытание ${String(n).padStart(2, "0")} — ${TIER_NAMES[tier][index]}`;
+  const feature =
+    count("Z") > 0
+      ? "Босс"
+      : count("D") > 0
+        ? "Ключ и дверь"
+        : count("W") > 0
+          ? "Пилы"
+          : count("N") > 0
+            ? "Пушки"
+            : count("T") > 0
+              ? "Стрелки"
+              : count("L") > 0
+                ? "Падающие"
+                : count("M") > 0 || count("V") > 0
+                  ? "Подъёмник"
+                  : count("H") > 0
+                    ? "Лестницы"
+                    : count("B") > 0
+                      ? "Батуты"
+                      : count("S") > 0
+                        ? "Шипы"
+                        : "Разминка";
+
+  return `Испытание ${number} — ${feature}${suffix}`;
 }
 
 function biomeFor(n) {
@@ -397,7 +387,7 @@ function main() {
 
     levels.push({
       version: 1,
-      name: nameFor(n),
+      name: nameFor(n, rows),
       biome: biomeFor(n),
       author: "",
       note: noteFor(n),
