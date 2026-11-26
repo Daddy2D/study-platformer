@@ -8,3 +8,5 @@ Thumbs.db
 .env.*
 .superpowers/
 coverage/
+dist-offline/
+dist-offline.zip

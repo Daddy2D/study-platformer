@@ -30,7 +30,8 @@ START_PROMPT.md       стартовое задание: цель, этапы, �
 ## Команды
 
 `npm install` — один раз; `npm run dev` — сервер разработки;
-`npm run build` — сборка в `dist/`; `npm run preview` — проверка сборки;
+`npm run build` — сборка в `dist/`; `npm run build:offline` — комплект
+для раздачи детям (открывается двойным щелчком); `npm run preview` — проверка сборки;
 `npm test` — тесты; `npm run lint` — ESLint.
 
 Перед коммитом: lint, тесты и сборка проходят, игра и редактор проверены руками.

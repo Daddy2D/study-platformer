@@ -1732,7 +1732,10 @@ function testCurrentLevel() {
   const testWindow = window.open("index.html?test=1", "_blank");
 
   if (!testWindow) {
-    showToast("Браузер заблокировал новую вкладку. Разреши всплывающие окна.", "error");
+    // Некоторые браузеры не открывают файл из файла в новой вкладке:
+    // тогда проверяем здесь же (черновик уже сохранён).
+    showToast("Открываю проверку в этой вкладке.", "warn");
+    window.location.href = "index.html?test=1";
     return;
   }
 
