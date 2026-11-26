@@ -101,6 +101,21 @@ async function main() {
     report.push(`${page.html} — ${Math.round(html.length / 1024)} КБ`);
   }
 
+  // Пак испытаний кладём рядом: его импортируют через редактор
+  if (fs.existsSync("packs")) {
+    for (const name of fs.readdirSync("packs")) {
+      if (!name.endsWith(".json")) {
+        continue;
+      }
+
+      fs.copyFileSync(
+        path.join("packs", name),
+        path.join(OUT_DIR, name)
+      );
+      report.push(`${name} — пак уровней`);
+    }
+  }
+
   fs.writeFileSync(
     path.join(OUT_DIR, "README.txt"),
     [
@@ -109,6 +124,10 @@ async function main() {
       "1. Распакуй папку целиком.",
       "2. Открой index.html двойным щелчком.",
       "3. Редактор уровней открывается из меню игры.",
+      "",
+      "Рядом лежит Испытания.json — пак из 50 уровней разной сложности.",
+      "Как загрузить: открой редактор, нажми «Загрузить JSON» и выбери этот файл.",
+      "Уровни появятся в меню «Мои уровни».",
       "",
       "Свои уровни, настройки и прогресс сохраняются в браузере на этом компьютере.",
       "Чтобы перенести уровень, скачай его из редактора кнопкой «Скачать JSON».",
