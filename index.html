@@ -21,15 +21,79 @@
     canvas {
       display: block;
       width: min(calc(100vw - 8px), calc((100vh - 8px) * 16 / 9));
+      max-height: calc(100vh - 8px);
       height: auto;
       border: 4px solid #000;
       image-rendering: pixelated;
       background: #63b8ff;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Кнопки для телефона и планшета */
+    .touch-controls {
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    body.touch.touch-game .touch-controls {
+      display: flex;
+    }
+
+    .touch-group {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .touch-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      background: rgba(15, 23, 42, 0.55);
+      color: #fff;
+      font-size: 24px;
+      line-height: 1;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .touch-btn.small {
+      width: 52px;
+      height: 52px;
+      font-size: 16px;
+    }
+
+    .touch-btn:active {
+      background: rgba(47, 128, 237, 0.75);
     }
   </style>
 </head>
 <body>
   <canvas id="game" width="960" height="540"></canvas>
+
+  <div id="touchControls" class="touch-controls">
+    <div class="touch-group">
+      <button class="touch-btn" type="button" data-key="ArrowLeft" aria-label="Влево">◀</button>
+      <button class="touch-btn" type="button" data-key="ArrowRight" aria-label="Вправо">▶</button>
+    </div>
+    <div class="touch-group">
+      <button class="touch-btn small" type="button" data-action="pause" aria-label="Пауза">❚❚</button>
+      <button class="touch-btn small" type="button" data-key="ArrowDown" aria-label="Вниз">▼</button>
+      <button class="touch-btn" type="button" data-action="jump" aria-label="Прыжок">▲</button>
+    </div>
+  </div>
 
   <!-- Игра: модули собирает Vite -->
   <script type="module" src="./src/main.js"></script>

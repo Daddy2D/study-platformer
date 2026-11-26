@@ -2,7 +2,7 @@ import { TILE, SETTINGS } from "../core/settings.js";
 import { canvas, ctx } from "../core/canvas.js";
 import { IMAGES } from "../core/sprites.js";
 import { state } from "../core/state.js";
-import { clamp, solidAt } from "./collision.js";
+import { clamp } from "./collision.js";
 import { player } from "./player.js";
 import { drawParticles } from "../core/effects.js";
 import {
@@ -1202,6 +1202,28 @@ function drawWorld() {
     Math.max(0, state.levelHeight - canvas.height)
   );
 
+  // Рисуем только то, что попадает в кадр: на больших картах
+  // это экономит сотни вызовов drawImage каждый кадр.
+  const view = {
+    x: camX - 64,
+    y: camY - 64,
+    w: canvas.width + 128,
+    h: canvas.height + 128
+  };
+
+  const inView = item => {
+    // Подстраховка: объект без размеров считаем точкой и не теряем
+    const w = Number.isFinite(item.w) ? item.w : 1;
+    const h = Number.isFinite(item.h) ? item.h : 1;
+
+    return (
+      item.x + w > view.x &&
+      item.x < view.x + view.w &&
+      item.y + h > view.y &&
+      item.y < view.y + view.h
+    );
+  };
+
   if (state.currentBiome === "castle") {
     drawCastleBackground(camX, camY);
   } else {
@@ -1229,8 +1251,9 @@ function drawWorld() {
   );
 
   for (const solid of state.solids) {
-    // Верхний слой земли — с травой, всё, что под ним, — просто земля
-    const covered = solidAt(solid.x + solid.w / 2, solid.y - 2);
+    if (!inView(solid)) continue;
+    // Верхний слой земли — с травой, остальной — просто земля
+    const covered = solid.covered;
 
     if (state.currentBiome === "snow") {
       if (covered) {
@@ -1280,6 +1303,7 @@ function drawWorld() {
   }
 
   for (const platform of state.movingPlatforms) {
+    if (!inView(platform)) continue;
     drawSprite(
       "moving",
       "#8e44ad",
@@ -1291,50 +1315,62 @@ function drawWorld() {
   }
 
   for (const platform of state.fallingPlatforms) {
+    if (!inView(platform)) continue;
     drawFallingPlatform(platform);
   }
 
   for (const platform of state.oneWayPlatforms) {
+    if (!inView(platform)) continue;
     drawOneWayPlatform(platform);
   }
 
   for (const block of state.breakableBlocks) {
+    if (!inView(block)) continue;
     drawBreakable(block);
   }
 
   for (const ladder of state.ladders) {
+    if (!inView(ladder)) continue;
     drawLadder(ladder);
   }
 
   for (const door of state.doors) {
+    if (!inView(door)) continue;
     drawDoor(door);
   }
 
   for (const checkpoint of state.checkpoints) {
+    if (!inView(checkpoint)) continue;
     drawCheckpoint(checkpoint);
   }
 
   for (const key of state.keyItems) {
+    if (!inView(key)) continue;
     drawKey(key);
   }
 
   for (const spike of state.spikes) {
+    if (!inView(spike)) continue;
     drawSpike(spike);
   }
 
   for (const spring of state.springs) {
+    if (!inView(spring)) continue;
     drawSpring(spring);
   }
 
   for (const saw of state.saws) {
+    if (!inView(saw)) continue;
     drawSaw(saw);
   }
 
   for (const cannon of state.cannons) {
+    if (!inView(cannon)) continue;
     drawCannon(cannon);
   }
 
   for (const coin of state.coins) {
+    if (!inView(coin)) continue;
     const bob =
       Math.sin(Date.now() / SETTINGS.coinBobSpeed + coin.x) *
       SETTINGS.coinBobAmount;
@@ -1343,14 +1379,17 @@ function drawWorld() {
   }
 
   for (const enemy of state.enemies) {
+    if (!inView(enemy)) continue;
     drawEnemy(enemy);
   }
 
   for (const bullet of state.bullets) {
+    if (!inView(bullet)) continue;
     drawBullet(bullet);
   }
 
   for (const exit of state.exits) {
+    if (!inView(exit)) continue;
     drawExit(exit);
   }
 

@@ -561,6 +561,16 @@ export function loadLevel(index) {
     );
   }
 
+  // Верхний слой земли рисуется с травой. Считаем это один раз при загрузке,
+  // а не для каждой клетки каждый кадр.
+  const solidCells = new Set(
+    state.solids.map(solid => `${solid.x},${solid.y}`)
+  );
+
+  for (const solid of state.solids) {
+    solid.covered = solidCells.has(`${solid.x},${solid.y - TILE}`);
+  }
+
   if (!start) {
     console.warn(`Уровень ${index + 1}: нет точки старта P. Игрок появится в левом верхнем углу.`);
     start = { x: TILE, y: TILE };
