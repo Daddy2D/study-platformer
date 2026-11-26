@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validateLevelRows } from "../src/core/level-format.js";
 import { isFinishReachable } from "../src/core/level-reach.js";
 
-const PACK_FILE = "public/packs/Испытания.json";
+const PACK_FILE = "src/data/challenge-pack.json";
 const pack = JSON.parse(fs.readFileSync(PACK_FILE, "utf8"));
 
 describe("пак «Испытания»", () => {

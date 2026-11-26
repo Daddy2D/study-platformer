@@ -19,6 +19,7 @@ import {
 import { LEVEL_NAMES, LEVEL_META } from "../data/levels/index.js";
 import { paginateLevels, sortLevelsByPack } from "../core/level-pack.js";
 import { getTaskProgress } from "./tasks.js";
+import { installChallengePack } from "./challenge-pack.js";
 import {
   BUILTIN_LEVELS,
   loadLevel,
@@ -997,6 +998,9 @@ function updateGame() {
 // ============================================
 // ГЛАВНЫЙ ЦИКЛ
 // ============================================
+
+// Пак испытаний ставится при первом запуске: 50 уровней в «Моих уровнях»
+installChallengePack();
 
 const urlParams = new URLSearchParams(window.location.search);
 
