@@ -101,19 +101,13 @@ async function main() {
     report.push(`${page.html} — ${Math.round(html.length / 1024)} КБ`);
   }
 
-  // Пак испытаний кладём рядом: его импортируют через редактор
-  if (fs.existsSync(path.join("public", "packs"))) {
-    for (const name of fs.readdirSync(path.join("public", "packs"))) {
-      if (!name.endsWith(".json")) {
-        continue;
-      }
+  // Пак испытаний уже внутри игры, но кладём JSON рядом:
+  // его можно перенести на другой компьютер.
+  const packSource = path.join("src", "data", "challenge-pack.json");
 
-      fs.copyFileSync(
-        path.join("public", "packs", name),
-        path.join(OUT_DIR, name)
-      );
-      report.push(`${name} — пак уровней`);
-    }
+  if (fs.existsSync(packSource)) {
+    fs.copyFileSync(packSource, path.join(OUT_DIR, "Испытания.json"));
+    report.push("Испытания.json — пак уровней (50)");
   }
 
   fs.writeFileSync(
@@ -126,8 +120,9 @@ async function main() {
       "3. Редактор уровней открывается из меню игры.",
       "",
       "Рядом лежит Испытания.json — пак из 50 уровней разной сложности.",
-      "Как загрузить: открой редактор, нажми «Загрузить JSON» и выбери этот файл.",
-      "Уровни появятся в меню «Мои уровни».",
+      "Они уже стоят в игре: меню «Мои уровни» → группа «Испытания».",
+      "JSON нужен, только чтобы перенести пак на другой компьютер:",
+      "редактор → «Загрузить JSON» → выбери файл.",
       "",
       "Свои уровни, настройки и прогресс сохраняются в браузере на этом компьютере.",
       "Чтобы перенести уровень, скачай его из редактора кнопкой «Скачать JSON».",

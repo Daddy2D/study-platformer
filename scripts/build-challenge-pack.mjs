@@ -13,7 +13,7 @@ import { isFinishReachable } from "../src/core/level-reach.js";
 
 const SEED = 20261126;
 const PACK_NAME = "Испытания";
-const OUT_FILE = path.join("public", "packs", "Испытания.json");
+const OUT_FILE = path.join("src", "data", "challenge-pack.json");
 
 const TIER_NOTES = [
   "Разминка: прыжки, монеты и первые шипы.",

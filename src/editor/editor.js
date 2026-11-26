@@ -1,6 +1,7 @@
 import { LEVELS, LEVEL_NAMES, LEVEL_BIOMES } from "../data/levels/index.js";
 import { countTiles as countLevelTiles, validateLevelRows } from "../core/level-format.js";
 import { buildPack, parsePack, sortLevelsByPack } from "../core/level-pack.js";
+import { installChallengePack } from "../game/challenge-pack.js";
 import { sanitizeSettingsOverrides } from "../core/settings.js";
 import {
   normalizeLevelRows,
@@ -2313,6 +2314,7 @@ window.addEventListener("beforeunload", event => {
 
 buildPalette();
 buildTemplateOptions();
+installChallengePack();
 refreshLoadOptions();
 
 const restoredDraft = getEditorDraft();
