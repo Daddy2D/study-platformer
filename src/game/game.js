@@ -12,10 +12,13 @@ import { updateEffects, spawnParticles } from "../core/effects.js";
 import {
   getCustomLevels,
   getCustomLevel,
-  getTestLevel
+  getTestLevel,
+  getCustomResults,
+  saveCustomResult
 } from "../core/storage.js";
 import { LEVEL_NAMES, LEVEL_META } from "../data/levels/index.js";
 import { paginateLevels, sortLevelsByPack } from "../core/level-pack.js";
+import { getTaskProgress } from "./tasks.js";
 import {
   BUILTIN_LEVELS,
   loadLevel,
@@ -58,7 +61,7 @@ import { drawGame } from "./render.js";
 // Свои уровни в меню и номер страницы
 let customLevelsCache = [];
 let customPage = 0;
-const CUSTOM_PAGE_SIZE = 3;
+const CUSTOM_PAGE_SIZE = 4;
 
 // Готовые уровни и номер страницы
 let levelPage = 0;
@@ -113,6 +116,7 @@ function rebuildUi() {
       { action: "play", label: primaryLabel },
       { action: "levels", label: "Уровни" },
       { action: "custom", label: "Мои уровни" },
+      { action: "tasks", label: "Задания урока" },
       { action: "stats", label: "Достижения" },
       { action: "settings", label: "Настройки уровней" },
       { action: "editor", label: "Редактор уровней" },
@@ -172,6 +176,30 @@ function rebuildUi() {
             : `←  Страница ${levelPage + 1} из ${totalPages}`
       });
     }
+
+    specs.push({ action: "back", label: "Назад" });
+
+    state.uiButtons = layoutLevelButtons(specs);
+    return;
+  }
+
+  if (state.gameState === "tasks") {
+    const levels = sortLevelsByPack(getCustomLevels());
+    const tasks = getTaskProgress(levels, getCustomResults());
+    const done = tasks.filter(task => task.done).length;
+
+    state.uiTitle = "ЗАДАНИЯ УРОКА";
+    state.uiSubtitle = `Выполнено: ${done} из ${tasks.length}`;
+    state.uiHint = "↑ ↓ ← → — выбор    Esc — назад";
+
+    const specs = tasks.map(task => ({
+      action: "taskInfo",
+      label: `${task.done ? "✓" : "○"} ${task.title}`,
+      sub: task.done
+        ? `Готово: «${task.level.name}»` +
+          (task.level.author ? ` · ${task.level.author}` : "")
+        : task.hint
+    }));
 
     specs.push({ action: "back", label: "Назад" });
 
@@ -390,6 +418,7 @@ function startTestGame() {
 
 function startSingleLevel(level, source, settingsKey) {
   state.gameLevels = [{
+    id: level.id || null,
     name: level.name,
     rows: level.rows,
     settingsKey: settingsKey || null,
@@ -457,6 +486,11 @@ function activateButton(button) {
 
   if (button.action === "stats") {
     setState("stats");
+    return;
+  }
+
+  if (button.action === "tasks") {
+    setState("tasks");
     return;
   }
 
@@ -574,7 +608,7 @@ function updateUiInput() {
     }
   }
 
-  if (state.gameState === "levels") {
+  if (state.gameState === "levels" || state.gameState === "tasks") {
     const columns = 2;
 
     if (state.leftPressed && state.uiIndex % columns > 0) {
@@ -667,6 +701,14 @@ function completeLevel() {
     state.lastLevelResult = recordLevelCompletion(state.currentLevelIndex, result);
   }
 
+  // Свой уровень: запоминаем прохождение для заданий урока
+  if (state.levelSource === "custom" && state.currentLevelId) {
+    saveCustomResult(state.currentLevelId, {
+      frames: state.levelTimerFrames,
+      bossDefeated: state.bossDefeated
+    });
+  }
+
   if (!state.lastLevelResult) {
     state.lastLevelResult = {
       saved: false,
@@ -695,6 +737,7 @@ function updateGame() {
       if (
         state.gameState === "levels" ||
         state.gameState === "custom" ||
+        state.gameState === "tasks" ||
         state.gameState === "stats"
       ) {
         setState("menu");

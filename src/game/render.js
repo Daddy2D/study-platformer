@@ -785,7 +785,7 @@ function drawMenuScreen() {
   drawCenteredText(
     state.uiHint,
     canvas.width / 2,
-    canvas.height - 26,
+    state.gameState === "custom" ? canvas.height - 12 : canvas.height - 26,
     "16px Arial",
     "rgba(255, 255, 255, 0.85)",
     canvas.width - 60

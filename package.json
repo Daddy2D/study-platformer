@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:offline": "node scripts/build-offline.mjs",
+    "build:pack": "node scripts/build-challenge-pack.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

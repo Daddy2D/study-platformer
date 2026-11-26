@@ -318,6 +318,7 @@ export function loadLevel(index) {
   }
 
   state.currentLevelName = level.name;
+  state.currentLevelId = level.id || null;
   state.currentLevelAuthor = level.author || "";
   state.currentLevelNote = level.note || "";
 

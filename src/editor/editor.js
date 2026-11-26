@@ -2036,7 +2036,8 @@ function importFromFile(file) {
           author: item.author,
           note: item.note,
           pack: item.pack || pack.name,
-          order: Number.isInteger(item.order) ? item.order : index
+          order: Number.isInteger(item.order) ? item.order : index,
+          imported: true
         });
 
         if (!level) {
