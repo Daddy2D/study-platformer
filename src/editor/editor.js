@@ -1251,7 +1251,7 @@ function buildPalette() {
     swatch.style.color = info.textColor;
 
     if (char === ".") {
-      swatch.style.borderColor = "#94a3b8";
+      swatch.style.borderColor = "var(--muted)";
       swatch.style.textShadow = "none";
     }
 

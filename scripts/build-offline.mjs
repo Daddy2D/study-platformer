@@ -12,6 +12,7 @@ import { build } from "esbuild";
 
 const OUT_DIR = "dist-offline";
 const SPRITES_DIR = "public/sprites";
+const TOKENS_CSS = "docs/design/tokens.css";
 
 const MIME = {
   ".svg": "image/svg+xml",
@@ -62,6 +63,7 @@ async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   const sprites = spriteReplacements();
+  const tokens = fs.readFileSync(TOKENS_CSS, "utf8");
   const report = [];
 
   for (const page of PAGES) {
@@ -87,8 +89,15 @@ async function main() {
     }
 
     if (page.css) {
-      const css = fs.readFileSync(page.css, "utf8");
-      html = html.replace("</head>", `  <style>\n${css}\n</style>\n</head>`);
+      // В офлайне @import некуда вести: токены вставляем в тот же <style>.
+      const css = fs
+        .readFileSync(page.css, "utf8")
+        .replace(/@import\s+["'][^"']*tokens\.css["'];?\s*/g, "");
+
+      html = html.replace(
+        "</head>",
+        `  <style>\n${tokens}\n${css}\n</style>\n</head>`
+      );
     }
 
     const target = path.join(OUT_DIR, page.html);

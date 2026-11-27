@@ -1,20 +1,9 @@
 /* ============================================
    НАСТРОЙКИ УРОВНЕЙ
+   Оформление: пакет friendly (docs/design/tokens.css)
    ============================================ */
 
-:root {
-  --bg: #eef3f9;
-  --panel: #ffffff;
-  --text: #1f2937;
-  --muted: #5b6b7f;
-  --border: #d5deea;
-  --blue: #2f80ed;
-  --blue-dark: #1c5fc0;
-  --green: #27ae60;
-  --green-dark: #1d8a4b;
-  --red: #d64545;
-  --shadow: 0 6px 20px rgba(31, 41, 55, 0.1);
-}
+@import "../../docs/design/tokens.css";
 
 * {
   box-sizing: border-box;
@@ -28,8 +17,8 @@ body {
 
 body {
   background: var(--bg);
-  color: var(--text);
-  font-family: Arial, "Segoe UI", sans-serif;
+  color: var(--fg);
+  font-family: var(--font-body);
 }
 
 button,
@@ -38,17 +27,31 @@ select {
   font: inherit;
 }
 
-button {
-  padding: 10px 16px;
-  color: var(--text);
-  background: #f9fbfe;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  cursor: pointer;
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
-button:hover {
-  background: #eef5ff;
+button {
+  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+button:hover:not(:disabled) {
+  background: var(--surface-warm);
+  border-color: var(--accent);
 }
 
 button:disabled {
@@ -57,23 +60,25 @@ button:disabled {
 }
 
 button.primary {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
+  color: var(--accent-on);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
-button.primary:hover {
-  background: var(--blue-dark);
+button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 button.green {
-  color: #fff;
-  background: var(--green);
-  border-color: var(--green);
+  color: var(--accent-on);
+  background: var(--success);
+  border-color: var(--success);
 }
 
-button.green:hover {
-  background: var(--green-dark);
+button.green:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--success), black 10%);
+  border-color: color-mix(in oklab, var(--success), black 10%);
 }
 
 button.wide {
@@ -86,42 +91,45 @@ button.wide {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 18px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 2px 10px rgba(31, 41, 55, 0.06);
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .brand h1 {
   margin: 0;
-  font-size: 22px;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  letter-spacing: var(--tracking-display);
   white-space: nowrap;
 }
 
 .back-link {
-  padding: 8px 12px;
-  color: var(--blue);
-  font-weight: bold;
+  padding: var(--space-2) var(--space-3);
+  color: var(--accent);
+  font-weight: 700;
   text-decoration: none;
-  background: #eaf2ff;
-  border-radius: 8px;
+  background: var(--surface-warm);
+  border-radius: var(--radius-pill);
   white-space: nowrap;
+  transition: background var(--motion-fast) var(--ease-standard);
 }
 
 .back-link:hover {
-  background: #dbe9ff;
+  background: color-mix(in oklab, var(--surface-warm), var(--accent) 12%);
 }
 
 .top-note {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 /* ---------- Сетка ---------- */
@@ -129,16 +137,16 @@ button.wide {
 .layout {
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr);
-  gap: 16px;
-  max-width: 1180px;
+  gap: var(--space-4);
+  max-width: var(--container-max);
   margin: 0 auto;
-  padding: 18px;
+  padding: var(--space-4);
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-3);
 }
 
 .workspace {
@@ -146,57 +154,57 @@ button.wide {
 }
 
 .card {
-  padding: 16px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-flat);
 }
 
 .card h2 {
-  margin: 0 0 12px;
-  color: var(--muted);
-  font-size: 15px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  margin: 0 0 var(--space-3);
+  color: var(--fg-2);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: bold;
+  gap: var(--space-1);
+  color: var(--fg-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .field select {
   width: 100%;
-  padding: 10px;
-  color: var(--text);
-  background: #f9fbfe;
+  padding: var(--space-2) var(--space-3);
+  color: var(--fg);
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   outline: none;
+  transition: border-color var(--motion-fast) var(--ease-standard);
 }
 
 .field select:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.15);
+  border-color: var(--accent);
 }
 
 .hint {
-  margin: 10px 0;
+  margin: var(--space-3) 0;
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: var(--text-xs);
+  line-height: var(--leading-body);
 }
 
 .card.help p {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
 }
 
 .card.help p:last-child {
@@ -208,12 +216,12 @@ button.wide {
 .presets {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .presets button {
   flex: 1 1 40%;
-  padding: 9px 10px;
+  padding: var(--space-2) var(--space-3);
 }
 
 /* ---------- Поля настроек ---------- */
@@ -221,50 +229,49 @@ button.wide {
 .settings-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .setting-field {
-  padding: 14px;
-  background: #f9fbfe;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  padding: var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
 }
 
 .setting-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .setting-head label {
-  color: var(--text);
-  font-size: 14px;
-  font-weight: bold;
+  color: var(--fg);
+  font-size: var(--text-sm);
+  font-weight: 700;
 }
 
 .setting-head input[type="number"] {
   width: 88px;
-  padding: 7px 8px;
-  color: var(--text);
+  padding: var(--space-1) var(--space-2);
+  color: var(--fg);
   text-align: right;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   outline: none;
 }
 
 .setting-head input[type="number"]:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.15);
+  border-color: var(--accent);
 }
 
 .setting-field input[type="range"] {
   width: 100%;
-  margin: 4px 0 8px;
-  accent-color: var(--blue);
+  margin: var(--space-1) 0 var(--space-2);
+  accent-color: var(--accent);
 }
 
 .setting-field .hint {
@@ -274,27 +281,27 @@ button.wide {
 /* ---------- Расширенные настройки ---------- */
 
 .advanced-panel {
-  margin-top: 18px;
-  padding: 14px;
-  background: #f4f7fc;
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--surface-warm);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
 .advanced-panel summary {
-  color: var(--blue-dark);
-  font-size: 15px;
-  font-weight: bold;
+  color: var(--fg-2);
+  font-size: var(--text-base);
+  font-weight: 700;
   cursor: pointer;
   user-select: none;
 }
 
 .advanced-panel summary:hover {
-  color: var(--blue);
+  color: var(--accent);
 }
 
 .advanced-panel[open] summary {
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .advanced-panel .hint {
@@ -302,7 +309,7 @@ button.wide {
 }
 
 .advanced-panel .settings-fields {
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 
 /* ---------- Действия и сообщения ---------- */
@@ -311,45 +318,47 @@ button.wide {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-soft);
 }
 
 .status {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .status.ok {
-  color: var(--green-dark);
+  color: var(--success);
 }
 
 .status.warn {
-  color: #9a6700;
+  color: color-mix(in oklab, var(--warn), black 42%);
 }
 
 .status.error {
-  color: var(--red);
+  color: var(--danger);
 }
 
 /* ---------- Всплывающее сообщение ---------- */
 
 .toast {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: var(--space-5);
+  bottom: var(--space-5);
   max-width: 420px;
-  padding: 12px 16px;
-  color: #fff;
-  background: #1f2937;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  padding: var(--space-3) var(--space-4);
+  color: var(--surface);
+  background: var(--fg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-raised);
   opacity: 0;
   pointer-events: none;
   transform: translateY(10px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity var(--motion-base) var(--ease-standard),
+    transform var(--motion-base) var(--ease-standard);
 }
 
 .toast.visible {
@@ -358,15 +367,16 @@ button.wide {
 }
 
 .toast.success {
-  background: var(--green-dark);
+  background: var(--success);
 }
 
 .toast.error {
-  background: #a83232;
+  background: var(--danger);
 }
 
 .toast.warn {
-  background: #8a5a00;
+  background: var(--warn);
+  color: var(--fg);
 }
 
 /* ---------- Узкие экраны ---------- */

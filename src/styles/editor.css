@@ -1,20 +1,9 @@
 /* ============================================
    РЕДАКТОР УРОВНЕЙ
+   Оформление: пакет friendly (docs/design/tokens.css)
    ============================================ */
 
-:root {
-  --bg: #eef3f9;
-  --panel: #ffffff;
-  --text: #1f2937;
-  --muted: #5b6b7f;
-  --border: #d5deea;
-  --blue: #2f80ed;
-  --blue-dark: #1c5fc0;
-  --green: #27ae60;
-  --green-dark: #1d8a4b;
-  --red: #d64545;
-  --shadow: 0 6px 20px rgba(31, 41, 55, 0.1);
-}
+@import "../../docs/design/tokens.css";
 
 * {
   box-sizing: border-box;
@@ -30,9 +19,17 @@ body {
   display: flex;
   flex-direction: column;
   background: var(--bg);
-  color: var(--text);
-  font-family: Arial, "Segoe UI", sans-serif;
+  color: var(--fg);
+  font-family: var(--font-body);
   overflow: hidden;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 /* ---------- Верхняя панель ---------- */
@@ -41,39 +38,42 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 18px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 2px 10px rgba(31, 41, 55, 0.06);
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
   z-index: 2;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
   min-width: 0;
 }
 
 .brand h1 {
   margin: 0;
-  font-size: 22px;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  letter-spacing: var(--tracking-display);
   white-space: nowrap;
 }
 
 .back-link {
-  color: var(--blue);
-  font-weight: bold;
+  padding: var(--space-2) var(--space-3);
+  color: var(--accent);
+  font-weight: 700;
   text-decoration: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: #eaf2ff;
+  background: var(--surface-warm);
+  border-radius: var(--radius-pill);
   white-space: nowrap;
+  transition: background var(--motion-fast) var(--ease-standard);
 }
 
 .back-link:hover {
-  background: #dbe9ff;
+  background: color-mix(in oklab, var(--surface-warm), var(--accent) 12%);
 }
 
 .top-actions,
@@ -82,7 +82,7 @@ body {
 .tools {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 /* ---------- Основная сетка ---------- */
@@ -97,32 +97,32 @@ body {
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   overflow-y: auto;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--border-soft);
 }
 
 .card {
-  padding: 14px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-flat);
 }
 
 .card h2 {
-  margin: 0 0 10px;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+  margin: 0 0 var(--space-3);
+  color: var(--fg-2);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
 }
 
 .card.help p {
-  margin: 0 0 8px;
-  font-size: 13px;
-  line-height: 1.45;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
   color: var(--muted);
 }
 
@@ -135,60 +135,64 @@ body {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-bottom: 10px;
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--muted);
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
   flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--fg-2);
 }
 
 .field input,
 select {
   width: 100%;
-  padding: 10px 11px;
+  padding: var(--space-2) var(--space-3);
   font: inherit;
-  font-size: 15px;
+  font-size: var(--text-base);
   font-weight: normal;
-  color: var(--text);
-  background: #f9fbfe;
+  color: var(--fg);
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   outline: none;
+  transition: border-color var(--motion-fast) var(--ease-standard);
 }
 
 .field input:focus,
 select:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.16);
+  border-color: var(--accent);
 }
 
 .size-row {
   display: flex;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 select {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 
 /* ---------- Кнопки ---------- */
 
 button {
-  padding: 10px 14px;
-  min-height: 40px;
+  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
   font: inherit;
-  font-weight: bold;
-  color: var(--text);
-  background: #f3f7fc;
+  font-weight: 700;
+  color: var(--fg);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
 }
 
 button:hover:not(:disabled) {
-  background: #e8f0fa;
+  background: var(--surface-warm);
+  border-color: var(--accent);
 }
 
 button:active:not(:disabled) {
@@ -201,29 +205,36 @@ button:disabled {
 }
 
 button.primary {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
+  color: var(--accent-on);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 button.primary:hover:not(:disabled) {
-  background: var(--blue-dark);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 button.green {
-  color: #fff;
-  background: var(--green);
-  border-color: var(--green);
+  color: var(--accent-on);
+  background: var(--success);
+  border-color: var(--success);
 }
 
 button.green:hover:not(:disabled) {
-  background: var(--green-dark);
+  background: color-mix(in oklab, var(--success), black 10%);
+  border-color: color-mix(in oklab, var(--success), black 10%);
 }
 
 button.danger {
-  color: #fff;
-  background: var(--red);
-  border-color: var(--red);
+  color: var(--accent-on);
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+button.danger:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--danger), black 10%);
+  border-color: color-mix(in oklab, var(--danger), black 10%);
 }
 
 button.wide {
@@ -239,25 +250,25 @@ button.wide {
 .palette {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 7px;
+  gap: var(--space-2);
 }
 
 .palette-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 8px;
-  min-height: 44px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  min-height: 48px;
   text-align: left;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: normal;
-  background: #f9fbfe;
+  background: var(--bg);
 }
 
 .palette-item.active {
-  background: #eaf2ff;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.2);
+  background: var(--surface-warm);
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .swatch {
@@ -267,12 +278,12 @@ button.wide {
   width: 30px;
   height: 30px;
   flex: 0 0 30px;
-  border: 2px solid rgba(0, 0, 0, 0.22);
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  border: 2px solid color-mix(in oklab, var(--fg) 24%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--surface);
+  text-shadow: 0 1px 2px color-mix(in oklab, var(--fg) 45%, transparent);
 }
 
 .palette-name {
@@ -282,23 +293,23 @@ button.wide {
 }
 
 .hint {
-  margin: 10px 0 0;
-  font-size: 12px;
-  line-height: 1.45;
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-body);
   color: var(--muted);
 }
 
 /* Подсказка про выбранную клетку */
 .tile-hint {
-  margin: 10px 0 0;
-  padding: 9px 11px;
-  min-height: 40px;
-  border-radius: 8px;
-  background: #eef5ff;
-  border: 1px solid #cfe1f9;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--text);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-warm);
+  border: 1px solid var(--border);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  color: var(--fg);
 }
 
 /* ---------- Рабочая область ---------- */
@@ -313,9 +324,9 @@ button.wide {
 .toolbar {
   justify-content: space-between;
   flex-wrap: wrap;
-  padding: 10px 14px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .toolbar .tools {
@@ -324,30 +335,35 @@ button.wide {
 
 .tool.active,
 #pasteBtn.active {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
+  color: var(--accent-on);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .map-scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 18px;
-  background:
-    linear-gradient(45deg, #e3eaf3 25%, transparent 25%),
-    linear-gradient(-45deg, #e3eaf3 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #e3eaf3 75%),
-    linear-gradient(-45deg, transparent 75%, #e3eaf3 75%);
-  background-size: 24px 24px;
-  background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+  padding: var(--space-4);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(45deg, var(--border-soft) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--border-soft) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--border-soft) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--border-soft) 75%);
+  background-size: var(--space-6) var(--space-6);
+  background-position:
+    0 0,
+    0 calc(var(--space-6) / 2),
+    calc(var(--space-6) / 2) calc(var(--space-6) / -2),
+    calc(var(--space-6) / -2) 0;
 }
 
 #mapCanvas {
   display: block;
-  background: #ffffff;
-  border: 2px solid #b9c7d9;
-  box-shadow: 0 6px 18px rgba(31, 41, 55, 0.14);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: var(--elev-raised);
   cursor: crosshair;
   touch-action: none;
 }
@@ -356,46 +372,46 @@ button.wide {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px 18px;
-  padding: 9px 14px;
-  background: var(--panel);
-  border-top: 1px solid var(--border);
-  font-size: 13px;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border-top: 1px solid var(--border-soft);
+  font-size: var(--text-xs);
   color: var(--muted);
 }
 
 #selectionInfo {
-  color: var(--blue-dark);
-  font-weight: bold;
+  color: var(--accent);
+  font-weight: 700;
 }
 
 #miniMap {
   display: block;
   width: 100%;
   height: auto;
-  margin-bottom: 10px;
-  background: #ffffff;
+  margin-bottom: var(--space-3);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   image-rendering: pixelated;
 }
 
 #validation {
   margin-left: auto;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 #validation.ok {
-  color: var(--green-dark);
+  color: var(--success);
 }
 
 #validation.warn {
-  color: #b7791f;
+  color: color-mix(in oklab, var(--warn), black 42%);
 }
 
 #validation.error {
-  color: var(--red);
+  color: var(--danger);
 }
 
 /* ---------- Всплывающее сообщение ---------- */
@@ -406,15 +422,17 @@ button.wide {
   bottom: 54px;
   transform: translate(-50%, 20px);
   max-width: min(520px, calc(100vw - 40px));
-  padding: 12px 18px;
-  border-radius: 10px;
-  background: #1f2937;
-  color: #fff;
-  font-weight: bold;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--fg);
+  color: var(--surface);
+  font-weight: 700;
+  box-shadow: var(--elev-raised);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity var(--motion-base) var(--ease-standard),
+    transform var(--motion-base) var(--ease-standard);
 }
 
 .toast.visible {
@@ -423,15 +441,16 @@ button.wide {
 }
 
 .toast.error {
-  background: var(--red);
+  background: var(--danger);
 }
 
 .toast.success {
-  background: var(--green-dark);
+  background: var(--success);
 }
 
 .toast.warn {
-  background: #b7791f;
+  background: var(--warn);
+  color: var(--fg);
 }
 
 /* ---------- Узкие экраны ---------- */
@@ -449,7 +468,7 @@ button.wide {
   .sidebar {
     order: 2;
     border-right: none;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-soft);
   }
 
   .workspace {
@@ -461,6 +480,6 @@ button.wide {
   }
 
   .brand h1 {
-    font-size: 18px;
+    font-size: var(--text-lg);
   }
 }
