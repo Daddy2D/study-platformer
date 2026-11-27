@@ -5,6 +5,7 @@ import { state } from "../core/state.js";
 import { clamp } from "./collision.js";
 import { player } from "./player.js";
 import { drawParticles } from "../core/effects.js";
+import { getUiPalette, uiFont, withAlpha } from "../core/ui-palette.js";
 import {
   formatTimeFrames,
   getStarsText,
@@ -569,6 +570,7 @@ function drawCenteredText(text, x, y, font, color, maxWidth) {
 }
 
 function drawHeart(x, y, size, filled) {
+  const C = getUiPalette();
   const w = size;
   const h = size;
   const cx = x + w / 2;
@@ -581,50 +583,52 @@ function drawHeart(x, y, size, filled) {
   ctx.bezierCurveTo(x + w, y, cx, y, cx, y + h * 0.3);
   ctx.closePath();
 
-  ctx.fillStyle = filled ? "#ff4d6d" : "rgba(255, 255, 255, 0.22)";
+  ctx.fillStyle = filled ? C.danger : withAlpha(C.surface, 0.9);
   ctx.fill();
 
-  ctx.strokeStyle = filled ? "#ffd23d" : "rgba(255, 255, 255, 0.35)";
+  ctx.strokeStyle = filled ? C.danger : C.border;
   ctx.lineWidth = 2;
   ctx.stroke();
 }
 
 function drawUiButtons() {
+  const C = getUiPalette();
+
   for (let i = 0; i < state.uiButtons.length; i++) {
     const button = state.uiButtons[i];
     const rect = button.rect;
     const selected = i === state.uiIndex;
 
-    ctx.fillStyle = selected
-      ? "rgba(255, 210, 61, 0.95)"
-      : "rgba(15, 23, 42, 0.82)";
+    ctx.fillStyle = selected ? C.surfaceWarm : withAlpha(C.surface, 0.96);
 
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 
-    ctx.strokeStyle = selected ? "#ffffff" : "rgba(255, 255, 255, 0.35)";
+    ctx.strokeStyle = selected ? C.accent : C.border;
     ctx.lineWidth = selected ? 4 : 2;
     ctx.strokeRect(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2);
 
     const cx = rect.x + rect.w / 2;
 
     ctx.textAlign = "center";
-    ctx.fillStyle = selected ? "#1f2937" : "#ffffff";
+    ctx.fillStyle = C.fg;
 
     if (button.sub) {
-      ctx.font = "bold 20px Arial";
+      ctx.font = uiFont(20, "bold");
       ctx.fillText(button.label, cx, rect.y + rect.h / 2 - 2, rect.w - 24);
 
-      ctx.font = "13px Arial";
-      ctx.fillStyle = selected ? "#4b5563" : "rgba(255, 255, 255, 0.7)";
+      ctx.font = uiFont(13);
+      ctx.fillStyle = selected ? C.fg2 : C.muted;
       ctx.fillText(button.sub, cx, rect.y + rect.h / 2 + 16, rect.w - 24);
     } else {
-      ctx.font = "bold 21px Arial";
+      ctx.font = uiFont(21, "bold");
       ctx.fillText(button.label, cx, rect.y + rect.h / 2 + 7, rect.w - 24);
     }
   }
 }
 
 function drawMenuBackground() {
+  const C = getUiPalette();
+
   drawSky();
   drawClouds((Date.now() / 70) % 2000, 0);
 
@@ -635,47 +639,49 @@ function drawMenuBackground() {
     drawSprite("ground", "#7a4f2a", x, groundY, TILE, TILE);
   }
 
-  ctx.fillStyle = "rgba(10, 24, 44, 0.5)";
+  ctx.fillStyle = withAlpha(C.bg, 0.9);
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawStatsScreen() {
+  const C = getUiPalette();
+
   drawMenuBackground();
 
   const overview = getProgressOverview();
   const achievements = getAchievementList();
 
   ctx.save();
-  ctx.fillStyle = "rgba(10, 24, 44, 0.5)";
+  ctx.fillStyle = withAlpha(C.bg, 0.86);
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   drawCenteredText(
     state.uiTitle,
     canvas.width / 2,
     78,
-    "bold 44px Arial",
-    "#ffffff"
+    uiFont(44, "bold"),
+    C.fg
   );
 
   drawCenteredText(
     state.uiSubtitle,
     canvas.width / 2,
     112,
-    "18px Arial",
-    "#e8f4ff"
+    uiFont(18),
+    C.fg2
   );
 
   // Общая статистика
-  ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
+  ctx.fillStyle = withAlpha(C.surface, 0.94);
   ctx.fillRect(80, 135, 800, 92);
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.strokeStyle = C.border;
   ctx.lineWidth = 2;
   ctx.strokeRect(80, 135, 800, 92);
 
   ctx.textAlign = "left";
-  ctx.font = "bold 18px Arial";
-  ctx.fillStyle = "#ffffff";
+  ctx.font = uiFont(18, "bold");
+  ctx.fillStyle = C.fg;
 
   ctx.fillText(
     `Пройдено уровней: ${overview.completed}/${overview.totalLevels}`,
@@ -698,10 +704,10 @@ function drawStatsScreen() {
   ctx.fillText(`Побед: ${overview.completions}`, 500, 224);
 
   // Достижения
-  ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
+  ctx.fillStyle = withAlpha(C.surface, 0.94);
   ctx.fillRect(80, 245, 800, 205);
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.strokeStyle = C.border;
   ctx.strokeRect(80, 245, 800, 205);
 
   for (let index = 0; index < achievements.length; index++) {
@@ -712,10 +718,8 @@ function drawStatsScreen() {
     const y = 274 + row * 46;
 
     ctx.textAlign = "left";
-    ctx.font = "bold 16px Arial";
-    ctx.fillStyle = achievement.unlocked
-      ? "#8ff0b0"
-      : "rgba(255, 255, 255, 0.4)";
+    ctx.font = uiFont(16, "bold");
+    ctx.fillStyle = achievement.unlocked ? C.success : C.muted;
 
     ctx.fillText(
       `${achievement.unlocked ? "✓" : "•"} ${achievement.title}`,
@@ -723,10 +727,8 @@ function drawStatsScreen() {
       y
     );
 
-    ctx.font = "12px Arial";
-    ctx.fillStyle = achievement.unlocked
-      ? "rgba(232, 244, 255, 0.9)"
-      : "rgba(255, 255, 255, 0.3)";
+    ctx.font = uiFont(12);
+    ctx.fillStyle = achievement.unlocked ? C.fg2 : C.muted;
 
     ctx.fillText(achievement.description, x + 18, y + 17);
   }
@@ -739,32 +741,34 @@ function drawStatsScreen() {
     state.uiHint,
     canvas.width / 2,
     530,
-    "14px Arial",
-    "rgba(255, 255, 255, 0.8)"
+    uiFont(14),
+    C.fg2
   );
 }
 
 function drawMenuScreen() {
+  const C = getUiPalette();
+
   drawMenuBackground();
 
   const firstButtonY = state.uiButtons.length > 0 ? state.uiButtons[0].rect.y : 190;
 
-  // Заголовок с тенью
+  // Заголовок с мягким светлым контуром, как наклейка
   ctx.textAlign = "center";
-  ctx.font = "bold 52px Arial";
+  ctx.font = uiFont(52, "bold");
   ctx.lineWidth = 10;
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.45)";
+  ctx.strokeStyle = withAlpha(C.bg, 0.92);
   ctx.strokeText(state.uiTitle, canvas.width / 2, 98);
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = C.fg;
   ctx.fillText(state.uiTitle, canvas.width / 2, 98);
 
   drawCenteredText(
     state.uiSubtitle,
     canvas.width / 2,
     138,
-    "20px Arial",
-    "#e8f4ff",
+    uiFont(20),
+    C.fg2,
     canvas.width - 80
   );
 
@@ -773,8 +777,8 @@ function drawMenuScreen() {
       state.uiMessage,
       canvas.width / 2,
       firstButtonY - 22,
-      "17px Arial",
-      "#ffe28a",
+      uiFont(17),
+      C.fg,
       canvas.width - 80
     );
   }
@@ -786,8 +790,8 @@ function drawMenuScreen() {
     state.uiHint,
     canvas.width / 2,
     state.gameState === "custom" ? canvas.height - 12 : canvas.height - 26,
-    "16px Arial",
-    "rgba(255, 255, 255, 0.85)",
+    uiFont(16),
+    C.fg2,
     canvas.width - 60
   );
 }
@@ -795,6 +799,8 @@ function drawMenuScreen() {
 // Автор и строка «чем интересен» для выбранного уровня.
 // Показываем только на экранах со списком уровней.
 function drawSelectedLevelInfo() {
+  const C = getUiPalette();
+
   if (state.gameState !== "levels" && state.gameState !== "custom") {
     return;
   }
@@ -825,8 +831,8 @@ function drawSelectedLevelInfo() {
       author,
       canvas.width / 2,
       y,
-      "bold 16px Arial",
-      "#ffe28a",
+      uiFont(16, "bold"),
+      C.fg,
       canvas.width - 80
     );
   }
@@ -836,8 +842,8 @@ function drawSelectedLevelInfo() {
       note,
       canvas.width / 2,
       y + 24,
-      "15px Arial",
-      "rgba(255, 255, 255, 0.9)",
+      uiFont(15),
+      C.fg2,
       canvas.width - 80
     );
   }
@@ -848,6 +854,8 @@ function drawSelectedLevelInfo() {
 // ============================================
 
 function drawBossHud() {
+  const C = getUiPalette();
+
   if (!state.boss || state.bossDefeated) {
     return;
   }
@@ -857,21 +865,21 @@ function drawBossHud() {
   const y = 14;
   const height = 68;
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.64)";
+  ctx.fillStyle = withAlpha(C.surface, 0.94);
   ctx.fillRect(x, y, width, height);
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+  ctx.strokeStyle = C.border;
   ctx.lineWidth = 2;
   ctx.strokeRect(x, y, width, height);
 
   ctx.textAlign = "left";
-  ctx.fillStyle = "#ff8a8a";
-  ctx.font = "bold 18px Arial";
+  ctx.fillStyle = C.danger;
+  ctx.font = uiFont(18, "bold");
   ctx.fillText(state.boss.title, x + 14, y + 25);
 
   ctx.textAlign = "right";
-  ctx.fillStyle = "#ffe28a";
-  ctx.font = "15px Arial";
+  ctx.fillStyle = C.fg2;
+  ctx.font = uiFont(15);
   ctx.fillText(
     `Фаза ${state.boss.phase} из 2`,
     x + width - 14,
@@ -887,10 +895,10 @@ function drawBossHud() {
   for (let i = 0; i < state.boss.maxHp; i++) {
     const filled = i < state.boss.hp;
 
-    ctx.fillStyle = filled ? "#e74c3c" : "rgba(255, 255, 255, 0.16)";
+    ctx.fillStyle = filled ? C.danger : withAlpha(C.surfaceWarm, 0.9);
     ctx.fillRect(barX + i * (segmentWidth + gap), barY, segmentWidth, 16);
 
-    ctx.strokeStyle = filled ? "#ffd6d6" : "rgba(255, 255, 255, 0.25)";
+    ctx.strokeStyle = filled ? withAlpha(C.danger, 0.55) : C.border;
     ctx.lineWidth = 2;
     ctx.strokeRect(
       barX + i * (segmentWidth + gap),
@@ -902,13 +910,15 @@ function drawBossHud() {
 
   if (!state.boss.active) {
     ctx.textAlign = "center";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.font = "14px Arial";
+    ctx.fillStyle = C.muted;
+    ctx.font = uiFont(14);
     ctx.fillText("Босс ждёт игрока", x + width / 2, y + height - 6);
   }
 }
 
 function drawBossMessage() {
+  const C = getUiPalette();
+
   if (state.bossMessageTimer <= 0 || !state.boss || !state.bossMessageText) {
     return;
   }
@@ -916,7 +926,7 @@ function drawBossMessage() {
   const padding = 22;
 
   ctx.save();
-  ctx.font = "bold 24px Arial";
+  ctx.font = uiFont(24, "bold");
 
   const textWidth = Math.min(
     canvas.width - 80,
@@ -925,13 +935,11 @@ function drawBossMessage() {
 
   const x = canvas.width / 2 - textWidth / 2;
 
-  ctx.fillStyle = state.bossDefeated
-    ? "rgba(20, 90, 55, 0.9)"
-    : "rgba(60, 10, 70, 0.88)";
+  ctx.fillStyle = state.bossDefeated ? C.success : C.danger;
 
   ctx.fillRect(x, 100, textWidth, 46);
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
+  ctx.strokeStyle = withAlpha(C.accentOn, 0.55);
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 1, 101, textWidth - 2, 44);
 
@@ -939,8 +947,8 @@ function drawBossMessage() {
     state.bossMessageText,
     canvas.width / 2,
     132,
-    "bold 24px Arial",
-    "#ffffff",
+    uiFont(24, "bold"),
+    C.accentOn,
     canvas.width - 100
   );
 
@@ -948,17 +956,19 @@ function drawBossMessage() {
 }
 
 function drawHud() {
+  const C = getUiPalette();
+
   ctx.save();
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
+  ctx.fillStyle = withAlpha(C.surface, 0.94);
   ctx.fillRect(12, 12, 375, 168);
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.strokeStyle = C.border;
   ctx.lineWidth = 2;
   ctx.strokeRect(12, 12, 375, 168);
 
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 20px Arial";
+  ctx.fillStyle = C.fg;
+  ctx.font = uiFont(20, "bold");
   ctx.textAlign = "left";
 
   const levelLabel =
@@ -970,12 +980,12 @@ function drawHud() {
 
   ctx.fillText(levelLabel, 24, 42);
 
-  ctx.font = "16px Arial";
-  ctx.fillStyle = "#ffe28a";
+  ctx.font = uiFont(16);
+  ctx.fillStyle = C.fg2;
   ctx.fillText(state.currentLevelName, 24, 66, 350);
 
-  ctx.fillStyle = "#fff";
-  ctx.font = "18px Arial";
+  ctx.fillStyle = C.fg;
+  ctx.font = uiFont(18);
   ctx.fillText(`Очки: ${state.score}`, 24, 96);
   ctx.fillText(`Монеты: ${state.coinsTaken}/${state.coinsTotal}`, 190, 96);
   ctx.fillText(`Ключи: ${state.keyCount}`, 24, 122);
@@ -985,8 +995,8 @@ function drawHud() {
     122
   );
 
-  ctx.font = "16px Arial";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+  ctx.font = uiFont(16);
+  ctx.fillStyle = C.fg2;
   ctx.fillText("Жизни:", 24, 156);
 
   for (let i = 0; i < SETTINGS.startLives; i++) {
@@ -995,11 +1005,15 @@ function drawHud() {
 
   // Подсказка по управлению только на первом уровне
   if (state.levelSource === "builtin" && state.currentLevelIndex === 0 && !state.levelComplete) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillStyle = withAlpha(C.surface, 0.92);
     ctx.fillRect(400, 12, 548, 32);
 
-    ctx.fillStyle = "#fff";
-    ctx.font = "15px Arial";
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(400, 12, 548, 32);
+
+    ctx.fillStyle = C.fg;
+    ctx.font = uiFont(15);
     ctx.fillText(
       "← → — движение   Space — прыжок   P — пауза   R — заново   Q — меню",
       414,
@@ -1013,16 +1027,17 @@ function drawHud() {
   ctx.restore();
 }
 
-function drawOverlayTitle(title, subtitle) {
+function drawOverlayTitle(title, subtitle, color) {
+  const C = getUiPalette();
   const cx = canvas.width / 2;
 
   ctx.textAlign = "center";
-  ctx.font = "bold 44px Arial";
+  ctx.font = uiFont(44, "bold");
   ctx.lineWidth = 10;
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.strokeStyle = withAlpha(C.bg, 0.92);
   ctx.strokeText(title, cx, 215);
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = color || C.fg;
   ctx.fillText(title, cx, 215);
 
   if (subtitle) {
@@ -1030,16 +1045,18 @@ function drawOverlayTitle(title, subtitle) {
       subtitle,
       cx,
       252,
-      "21px Arial",
-      "#ffe28a",
+      uiFont(21),
+      C.fg2,
       canvas.width - 80
     );
   }
 }
 
 function drawOverlays() {
+  const C = getUiPalette();
+
   if (state.paused) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
+    ctx.fillStyle = withAlpha(C.bg, 0.9);
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     drawOverlayTitle(state.uiTitle, "Можно передохнуть");
@@ -1049,48 +1066,48 @@ function drawOverlays() {
       state.uiHint,
       canvas.width / 2,
       canvas.height - 26,
-      "16px Arial",
-      "rgba(255, 255, 255, 0.85)"
+      uiFont(16),
+      C.fg2
     );
     return;
   }
 
   if (state.gameOver) {
-    ctx.fillStyle = "rgba(40, 0, 0, 0.72)";
+    ctx.fillStyle = withAlpha(C.bg, 0.96);
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    drawOverlayTitle(state.uiTitle, state.uiSubtitle);
+    drawOverlayTitle(state.uiTitle, state.uiSubtitle, C.danger);
     drawUiButtons();
 
     drawCenteredText(
       state.uiHint,
       canvas.width / 2,
       canvas.height - 26,
-      "16px Arial",
-      "rgba(255, 255, 255, 0.85)"
+      uiFont(16),
+      C.fg2
     );
     return;
   }
 
   if (state.gameFinished) {
-    ctx.fillStyle = "rgba(0, 30, 20, 0.72)";
+    ctx.fillStyle = withAlpha(C.bg, 0.96);
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    drawOverlayTitle(state.uiTitle, state.uiSubtitle);
+    drawOverlayTitle(state.uiTitle, state.uiSubtitle, C.success);
     drawUiButtons();
 
     drawCenteredText(
       state.uiHint,
       canvas.width / 2,
       canvas.height - 26,
-      "16px Arial",
-      "rgba(255, 255, 255, 0.85)"
+      uiFont(16),
+      C.fg2
     );
     return;
   }
 
   if (state.levelComplete) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.fillStyle = withAlpha(C.bg, 0.96);
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const result = state.lastLevelResult;
@@ -1100,32 +1117,32 @@ function drawOverlays() {
       "УРОВЕНЬ ПРОЙДЕН!",
       canvas.width / 2,
       148,
-      "bold 42px Arial",
-      "#ffffff"
+      uiFont(42, "bold"),
+      C.success
     );
 
     drawCenteredText(
       `Время: ${formatTimeFrames(state.levelTimerFrames)}`,
       canvas.width / 2,
       202,
-      "24px Arial",
-      "#ffe28a"
+      uiFont(24),
+      C.fg2
     );
 
     drawCenteredText(
       `Монеты: ${state.coinsTaken}/${state.coinsTotal}   Жизни: ${state.lives}`,
       canvas.width / 2,
       238,
-      "20px Arial",
-      "#ffffff"
+      uiFont(20),
+      C.fg
     );
 
     drawCenteredText(
       `Звёзды: ${getStarsText(stars)}`,
       canvas.width / 2,
       290,
-      "bold 36px Arial",
-      "#ffd23d"
+      uiFont(36, "bold"),
+      C.accent
     );
 
     const credit = [
@@ -1140,8 +1157,8 @@ function drawOverlays() {
         credit,
         canvas.width / 2,
         322,
-        "17px Arial",
-        "#e8f4ff",
+        uiFont(17),
+        C.fg2,
         canvas.width - 80
       );
     }
@@ -1152,8 +1169,8 @@ function drawOverlays() {
           "Новый рекорд времени!",
           canvas.width / 2,
           352,
-          "18px Arial",
-          "#8ff0b0"
+          uiFont(18),
+          C.success
         );
       }
 
@@ -1161,8 +1178,8 @@ function drawOverlays() {
         `Лучшее: ${formatTimeFrames(result.bestTimeFrames)} · жизни: ${result.bestLives}`,
         canvas.width / 2,
         result.newBestTime ? 376 : 354,
-        "18px Arial",
-        "#e8f4ff"
+        uiFont(18),
+        C.fg2
       );
     }
 
@@ -1175,8 +1192,8 @@ function drawOverlays() {
       nextText,
       canvas.width / 2,
       408,
-      "22px Arial",
-      "#ffe28a"
+      uiFont(22),
+      C.fg2
     );
   }
 }

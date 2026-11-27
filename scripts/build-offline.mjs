@@ -22,7 +22,7 @@ const MIME = {
 };
 
 const PAGES = [
-  { html: "index.html", entry: "src/main.js", css: null },
+  { html: "index.html", entry: "src/main.js", css: null, tokens: true },
   { html: "editor.html", entry: "src/editor-main.js", css: "src/styles/editor.css" },
   { html: "settings.html", entry: "src/settings-main.js", css: "src/styles/settings.css" }
 ];
@@ -97,6 +97,12 @@ async function main() {
       html = html.replace(
         "</head>",
         `  <style>\n${tokens}\n${css}\n</style>\n</head>`
+      );
+    } else if (page.tokens) {
+      // Игре токены нужны для рамки канваса и тач-кнопок.
+      html = html.replace(
+        "</head>",
+        `  <style>\n${tokens}\n</style>\n</head>`
       );
     }
 

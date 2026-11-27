@@ -4,4 +4,5 @@
 // Модуль game.js сам собирает экраны, читает адресную строку
 // и запускает игровой цикл.
 
+import "../docs/design/tokens.css";
 import "./game/game.js";
